@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>فروشگاه لوکس امیرکبیر</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+    <style>
+        /* --- THEME & GLOBAL --- */
+        :root {
+            --gold: #d4af37; --gold-light: #f1d570; --bg: #121212; 
+            --card: #1e1e1e; --text: #fff; --border: #333;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Vazirmatn', sans-serif; outline: none; }
+        body { background: var(--bg); color: var(--text); padding-top: 80px; padding-bottom: 80px; overflow-x: hidden; }
+        
+        button { cursor: pointer; transition: 0.3s; font-family: inherit; }
+        input, textarea { background: #000; border: 1px solid var(--border); color: #fff; width: 100%; padding: 12px; border-radius: 8px; margin-bottom: 10px; }
+        input:focus, textarea:focus { border-color: var(--gold); }
+
+        /* --- VIEWS --- */
+        #view-login, #view-shop { display: none; animation: fadeIn 0.5s; }
+        .active-view { display: block !important; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- LOGIN STYLE --- */
+        .login-container { height: 80vh; display: flex; align-items: center; justify-content: center; }
+        .login-box { background: var(--card); padding: 40px; border-radius: 20px; border: 1px solid var(--gold); text-align: center; width: 90%; max-width: 400px; box-shadow: 0 0 50px rgba(212, 175, 55, 0.2); }
+        .google-btn { background: #fff; color: #333; border: none; padding: 12px 20px; border-radius: 50px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; margin-top: 20px; }
+
+        /* --- SHOP HEADER --- */
+        header { position: fixed; top: 0; width: 100%; height: 70px; background: rgba(30,30,30,0.95); border-bottom: 1px solid var(--gold); z-index: 1000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        .header-in { width: 100%; max-width: 1200px; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
+        .nav-btn { background: #333; color: var(--gold); border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 18px; margin-left: 10px; position: relative; }
+        .badge { position: absolute; top: -5px; right: -5px; background: var(--gold); color: #000; font-size: 10px; width: 16px; height: 16px; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
+
+        /* --- SHOP PAGES --- */
+        .page { display: none; max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .page.active { display: block; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .card { background: var(--card); padding: 15px; border-radius: 15px; border: 1px solid var(--border); transition: 0.3s; }
+        .card:hover { border-color: var(--gold); transform: translateY(-5px); }
+        .add-btn { width: 100%; padding: 10px; margin-top: 10px; background: transparent; border: 1px solid var(--gold); color: var(--gold); border-radius: 10px; font-weight: bold; }
+        .add-btn:hover { background: var(--gold); color: #000; }
+
+        /* --- MAP MODAL --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; display: none; align-items: center; justify-content: center; }
+        .modal-box { background: var(--card); width: 90%; max-width: 500px; border-radius: 15px; overflow: hidden; border: 1px solid var(--gold); display: flex; flex-direction: column; }
+        #map { height: 300px; width: 100%; }
+        .modal-form { padding: 20px; }
+        .save-addr-btn { background: var(--gold); color: #000; width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; margin-top: 10px; }
+
+        /* --- ADDRESS LIST --- */
+        .addr-item { background: #000; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-right: 3px solid var(--gold); position: relative; }
+        .addr-actions { position: absolute; left: 10px; top: 15px; display: flex; gap: 10px; }
+        .addr-actions i { cursor: pointer; font-size: 16px; }
+
+        /* --- LOADER --- */
+        #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 3000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: var(--gold); }
+    </style>
+</head>
+<body>
+
+    <div id="loader">
+        <i class="fas fa-circle-notch fa-spin" style="font-size: 40px; margin-bottom: 15px;"></i>
+        <p>در حال بارگذاری...</p>
+    </div>
+
+    <div id="view-login">
+        <div class="login-container">
+            <div class="login-box">
+                <h1 style="color:var(--gold); margin-bottom:10px;">AMIRKABIR</h1>
+                <p style="color:#aaa;">خوش آمدید، لطفا وارد شوید</p>
+                <button class="google-btn" onclick="auth.login()">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
+                    ورود با گوگل
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-shop">
+        <header>
+            <div class="header-in">
+                <h2 style="color:var(--gold); margin:0; cursor:pointer;" onclick="app.nav('home')">AMIRKABIR</h2>
+                <div>
+                    <button class="nav-btn" onclick="app.nav('profile')"><i class="fas fa-user"></i></button>
+                    <button class="nav-btn" onclick="app.nav('cart')">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span class="badge" id="c-count">0</span>
+                    </button>
+                    <button class="nav-btn" onclick="auth.logout()" style="color:#ff4757;"><i class="fas fa-power-off"></i></button>
+                </div>
+            </div>
+        </header>
+
+        <div id="p-home" class="page active">
+            <div class="grid" id="grid"></div>
+        </div>
+
+        <div id="p-cart" class="page">
+            <h2 style="margin-bottom:20px;">سبد خرید</h2>
+            <div id="cart-list"></div>
+            <button id="checkout-btn" class="save-addr-btn" style="display:none;" onclick="app.checkout()">نهایی کردن خرید</button>
+        </div>
+
+        <div id="p-profile" class="page">
+            <div style="background:var(--card); padding:20px; border-radius:15px; border:1px solid var(--border);">
+                <div style="display:flex; align-items:center; gap:15px; margin-bottom:20px;">
+                    <img id="u-img" style="width:60px; height:60px; border-radius:50%; border:2px solid var(--gold);">
+                    <div><h3 id="u-name" style="margin:0;"></h3><small id="u-email" style="color:#888"></small></div>
+                </div>
+
+                <hr style="border-color:#333; margin: 20px 0;">
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h3>آدرس‌های من</h3>
+                    <button class="add-btn" style="width:auto; margin:0;" onclick="mapLogic.openModal()">+ افزودن آدرس</button>
+                </div>
+                <div id="addr-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="addr-modal">
+        <div class="modal-box">
+            <div id="map"></div> <div class="modal-form">
+                <p style="color:var(--gold-light); font-size:12px; margin-bottom:10px;">پین را روی نقشه جابجا کنید تا لوکیشن دقیق شود</p>
+                <input type="text" id="m-title" placeholder="عنوان (مثلا: خانه)">
+                <textarea id="m-full" rows="2" placeholder="جزئیات متنی آدرس (پلاک، واحد...)"></textarea>
+                <button class="save-addr-btn" onclick="mapLogic.save()">ثبت آدرس</button>
+                <button onclick="mapLogic.close()" style="width:100%; background:transparent; color:#aaa; border:none; margin-top:10px;">انصراف</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- تنظیمات فایربیس (کد شما) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyB06UC0JITqaQCU_1toK7M7CUCKusEWrOE",
+            authDomain: "amirkabir-3b897.firebaseapp.com",
+            projectId: "amirkabir-3b897",
+            storageBucket: "amirkabir-3b897.firebasestorage.app",
+            messagingSenderId: "902534322032",
+            appId: "1:902534322032:web:17fd8194b65777dfd821b5"
+        };
+
+        // --- Auth & Init ---
+        const auth = {
+            init: function() {
+                if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                
+                // شنود وضعیت لاگین
+                firebase.auth().onAuthStateChanged(user => {
+                    document.getElementById('loader').style.display = 'none';
+                    if (user) {
+                        // اگر لاگین بود -> نمایش فروشگاه
+                        document.getElementById('view-login').classList.remove('active-view');
+                        document.getElementById('view-shop').classList.add('active-view');
+                        app.start(user);
+                    } else {
+                        // اگر لاگین نبود -> نمایش صفحه ورود
+                        document.getElementById('view-shop').classList.remove('active-view');
+                        document.getElementById('view-login').classList.add('active-view');
+                    }
+                });
+            },
+            login: function() {
+                document.getElementById('loader').style.display = 'flex';
+                // ریدایرکت برای موبایل عالی است
+                firebase.auth().signInWithRedirect(new firebase.auth.GoogleAuthProvider());
+            },
+            logout: function() {
+                if(confirm("خروج؟")) firebase.auth().signOut().then(() => location.reload());
+            }
+        };
+
+        // --- App Logic ---
+        const app = {
+            data: { cart:[], addr:[], orders:[] },
+            
+            start: function(user) {
+                document.getElementById('u-name').innerText = user.displayName;
+                document.getElementById('u-email').innerText = user.email;
+                document.getElementById('u-img').src = user.photoURL;
+                
+                const saved = localStorage.getItem('user_data');
+                if(saved) this.data = JSON.parse(saved);
+                
+                this.renderProds();
+                this.updateUI();
+            },
+            
+            save: function() { localStorage.setItem('user_data', JSON.stringify(this.data)); this.updateUI(); },
+
+            nav: function(id) {
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                document.getElementById('p-'+id).classList.add('active');
+            },
+
+            renderProds: function() {
+                const ps = [
+                    {n:"آیفون ۱۳ پرومکس", p:55000000, i:"fa-mobile"},
+                    {n:"مک‌بوک پرو M2", p:85000000, i:"fa-laptop"},
+                    {n:"پلی استیشن ۵", p:26000000, i:"fa-gamepad"},
+                    {n:"هدفون سونی", p:14000000, i:"fa-headphones"}
+                ];
+                document.getElementById('grid').innerHTML = ps.map(p => `
+                    <div class="card">
+                        <div style="font-size:50px; text-align:center; color:var(--gold); margin-bottom:10px;"><i class="fas ${p.i}"></i></div>
+                        <h3>${p.n}</h3>
+                        <p style="color:#aaa">${p.p.toLocaleString()} تومان</p>
+                        <button class="add-btn" onclick="app.addCart('${p.n}', ${p.p})">افزودن به سبد</button>
+                    </div>
+                `).join('');
+            },
+
+            addCart: function(n, p) { this.data.cart.push({n,p}); this.save(); alert("به سبد اضافه شد"); },
+            delCart: function(i) { this.data.cart.splice(i,1); this.save(); },
+
+            updateUI: function() {
+                document.getElementById('c-count').innerText = this.data.cart.length;
+                
+                // Cart
+                const cl = document.getElementById('cart-list');
+                if(this.data.cart.length===0) {
+                    cl.innerHTML = "<p style='text-align:center; color:#666'>سبد خرید خالی است</p>";
+                    document.getElementById('checkout-btn').style.display='none';
+                } else {
+                    let sum=0;
+                    cl.innerHTML = this.data.cart.map((c,i) => {
+                        sum+=c.p;
+                        return `<div style="display:flex; justify-content:space-between; padding:10px; background:#000; margin-bottom:5px; border-radius:5px;"><span>${c.n}</span><i class="fas fa-trash" style="color:red; cursor:pointer" onclick="app.delCart(${i})"></i></div>`;
+                    }).join('') + `<div style="text-align:left; margin-top:10px; font-weight:bold">جمع کل: <span style="color:var(--gold)">${sum.toLocaleString()}</span></div>`;
+                    document.getElementById('checkout-btn').style.display='block';
+                }
+
+                // Address List
+                document.getElementById('addr-list').innerHTML = this.data.addr.map((a,i) => `
+                    <div class="addr-item">
+                        <strong style="color:var(--gold)">${a.title}</strong>
+                        <p style="font-size:12px; margin-top:5px; color:#aaa;">${a.full}</p>
+                        <p style="font-size:10px; color:#555;">مختصات: ${a.lat.toFixed(4)}, ${a.lng.toFixed(4)}</p>
+                        <div class="addr-actions">
+                            <i class="fas fa-edit" style="color:var(--gold-light)" onclick="mapLogic.edit(${i})"></i>
+                            <i class="fas fa-trash" style="color:#ff4757" onclick="mapLogic.del(${i})"></i>
+                        </div>
+                    </div>
+                `).join('');
+            },
+
+            checkout: function() {
+                if(this.data.addr.length===0) return alert("لطفا ابتدا یک آدرس ثبت کنید");
+                if(confirm("نهایی کردن خرید؟")) {
+                    this.data.cart=[]; this.save(); alert("سفارش شما با موفقیت ثبت شد!"); app.nav('profile');
+                }
+            }
+        };
+
+        // --- MAP LOGIC (Leaflet) ---
+        const mapLogic = {
+            map: null,
+            marker: null,
+            currentCoords: [35.6892, 51.3890], // پیش‌فرض تهران
+            editIndex: -1, // اگر -1 باشد یعنی حالت افزودن است
+
+            initMap: function() {
+                if(this.map) return; // اگر قبلا ساخته شده دوباره نساز
+                
+                // ایجاد نقشه
+                this.map = L.map('map').setView(this.currentCoords, 13);
+                
+                // لایه نقشه (OpenStreetMap)
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap'
+                }).addTo(this.map);
+
+                // ایجاد مارکر قابل جابجایی
+                this.marker = L.marker(this.currentCoords, {draggable: true}).addTo(this.map);
+                
+                // وقتی مارکر جابجا شد، مختصات جدید رو بگیر
+                this.marker.on('dragend', (e) => {
+                    const pos = e.target.getLatLng();
+                    this.currentCoords = [pos.lat, pos.lng];
+                });
+
+                // کلیک روی نقشه برای جابجایی مارکر
+                this.map.on('click', (e) => {
+                    this.marker.setLatLng(e.latlng);
+                    this.currentCoords = [e.latlng.lat, e.latlng.lng];
+                });
+            },
+
+            openModal: function() {
+                document.getElementById('addr-modal').style.display = 'flex';
+                this.editIndex = -1; // حالت افزودن
+                document.getElementById('m-title').value = '';
+                document.getElementById('m-full').value = '';
+                
+                // با کمی تاخیر نقشه رو لود کن تا درست نمایش داده بشه
+                setTimeout(() => {
+                    this.initMap();
+                    this.map.invalidateSize(); // فیکس کردن مشکل نمایش ناقص نقشه
+                    this.map.setView([35.6892, 51.3890], 13);
+                    this.marker.setLatLng([35.6892, 51.3890]);
+                }, 100);
+            },
+
+            edit: function(index) {
+                const item = app.data.addr[index];
+                this.editIndex = index;
+                document.getElementById('addr-modal').style.display = 'flex';
+                document.getElementById('m-title').value = item.title;
+                document.getElementById('m-full').value = item.full;
+                
+                setTimeout(() => {
+                    this.initMap();
+                    this.map.invalidateSize();
+                    const newPos = [item.lat, item.lng];
+                    this.map.setView(newPos, 15);
+                    this.marker.setLatLng(newPos);
+                    this.currentCoords = newPos;
+                }, 100);
+            },
+
+            save: function() {
+                const title = document.getElementById('m-title').value;
+                const full = document.getElementById('m-full').value;
+                if(!title || !full) return alert("لطفا عنوان و آدرس متنی را وارد کنید");
+
+                const addrObj = {
+                    title: title,
+                    full: full,
+                    lat: this.currentCoords[0],
+                    lng: this.currentCoords[1]
+                };
+
+                if(this.editIndex === -1) {
+                    // افزودن جدید
+                    app.data.addr.push(addrObj);
+                } else {
+                    // ویرایش قبلی
+                    app.data.addr[this.editIndex] = addrObj;
+                }
+
+                app.save();
+                this.close();
+            },
+
+            del: function(index) {
+                if(confirm("حذف آدرس؟")) {
+                    app.data.addr.splice(index, 1);
+                    app.save();
+                }
+            },
+
+            close: function() {
+                document.getElementById('addr-modal').style.display = 'none';
+            }
+        };
+
+        window.onload = auth.init;
+    </script>
+</body>
+</html>

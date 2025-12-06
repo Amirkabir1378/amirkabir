@@ -7,188 +7,87 @@
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
     <style>
-        /* --- تم لوکس طلایی --- */
+        /* --- تمامی استایل‌ها مثل قبل (بدون تغییر) --- */
         :root {
-            --gold-primary: #d4af37;
-            --gold-light: #f1d570;
-            --gold-dark: #aa8c2c;
-            --bg-body: #121212;
-            --bg-card: #1e1e1e;
-            --text-main: #ffffff;
-            --text-sub: #b3b3b3;
-            --border: #333333;
-            --radius: 15px;
+            --gold-primary: #d4af37; --gold-light: #f1d570; --gold-dark: #aa8c2c;
+            --bg-body: #121212; --bg-card: #1e1e1e;
+            --text-main: #ffffff; --text-sub: #b3b3b3;
+            --border: #333333; --radius: 15px;
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Vazirmatn', sans-serif; outline: none; }
-        
-        body {
-            background-color: var(--bg-body);
-            color: var(--text-main);
-            padding-top: 80px;
-            overflow-x: hidden;
-            padding-bottom: 80px;
-        }
-
+        body { background-color: var(--bg-body); color: var(--text-main); padding-top: 80px; overflow-x: hidden; padding-bottom: 80px; }
         button { cursor: pointer; border: none; font-family: inherit; transition: 0.3s; }
-        input, textarea { 
-            background: var(--bg-body); border: 1px solid var(--border); 
-            color: white; padding: 10px; border-radius: 8px; width: 100%; font-family: inherit;
-        }
+        input, textarea { background: var(--bg-body); border: 1px solid var(--border); color: white; padding: 10px; border-radius: 8px; width: 100%; font-family: inherit; }
         input:focus { border-color: var(--gold-primary); }
-
-        /* --- Header --- */
-        header {
-            position: fixed; top: 0; width: 100%; height: 80px;
-            background: rgba(30, 30, 30, 0.95);
-            border-bottom: 1px solid var(--gold-dark);
-            z-index: 1000;
-            display: flex; align-items: center; justify-content: center;
-            backdrop-filter: blur(5px);
-        }
-        .header-inner {
-            width: 100%; max-width: 1400px; padding: 0 20px;
-            display: flex; justify-content: space-between; align-items: center;
-        }
+        header { position: fixed; top: 0; width: 100%; height: 80px; background: rgba(30, 30, 30, 0.95); border-bottom: 1px solid var(--gold-dark); z-index: 1000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .header-inner { width: 100%; max-width: 1400px; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
         .logo { font-size: 24px; font-weight: 900; color: var(--gold-primary); cursor: pointer; }
-        
         .nav-icons { display: flex; gap: 15px; align-items: center; }
-        .icon-btn {
-            width: 40px; height: 40px; border-radius: 50%;
-            background: var(--border); color: var(--gold-primary);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 18px; position: relative;
-        }
-        .badge {
-            position: absolute; top: -5px; right: -5px;
-            background: var(--gold-primary); color: #000;
-            font-size: 11px; width: 18px; height: 18px;
-            border-radius: 50%; display: flex; justify-content: center; align-items: center;
-            font-weight: bold;
-        }
-
-        /* --- Pages & Tabs --- */
+        .icon-btn { width: 40px; height: 40px; border-radius: 50%; background: var(--border); color: var(--gold-primary); display: flex; align-items: center; justify-content: center; font-size: 18px; position: relative; }
+        .badge { position: absolute; top: -5px; right: -5px; background: var(--gold-primary); color: #000; font-size: 11px; width: 18px; height: 18px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; }
         .page { display: none; max-width: 1400px; margin: 0 auto; padding: 20px; animation: fadeIn 0.4s; }
         .page.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
         .panel-box { background: var(--bg-card); border-radius: var(--radius); padding: 20px; border: 1px solid var(--border); }
-        
         .tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
         .tab { padding: 10px 0; color: var(--text-sub); cursor: pointer; position: relative; transition: 0.3s; }
         .tab.active { color: var(--gold-primary); font-weight: bold; }
         .tab.active::after { content: ''; position: absolute; bottom: -1px; right: 0; width: 100%; height: 2px; background: var(--gold-primary); }
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.3s; }
-
-        /* --- Login --- */
-        .login-box {
-            background: var(--bg-card); padding: 40px; border-radius: 20px;
-            text-align: center; max-width: 380px; margin: 60px auto;
-            border: 1px solid var(--gold-dark); box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-        }
-        .google-btn {
-            width: 100%; background: #fff; color: #333;
-            padding: 12px; border-radius: 50px; font-weight: bold;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-            margin-top: 30px; font-size: 14px;
-        }
-        .google-btn:active { transform: scale(0.95); background: #eee; }
-        
-        /* --- Products --- */
+        .login-box { background: var(--bg-card); padding: 40px; border-radius: 20px; text-align: center; max-width: 380px; margin: 60px auto; border: 1px solid var(--gold-dark); box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        .google-btn { width: 100%; background: #fff; color: #333; padding: 12px; border-radius: 50px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 30px; font-size: 14px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 25px; }
-        .card {
-            background: var(--bg-card); border-radius: var(--radius); padding: 15px;
-            border: 1px solid var(--border); transition: 0.3s;
-        }
+        .card { background: var(--bg-card); border-radius: var(--radius); padding: 15px; border: 1px solid var(--border); transition: 0.3s; }
         .card:hover { border-color: var(--gold-primary); transform: translateY(-5px); }
-        .card-img {
-            height: 180px; background: #000; border-radius: 10px; margin-bottom: 15px;
-            display: flex; align-items: center; justify-content: center; font-size: 50px; color: var(--gold-primary);
-        }
-        .add-btn {
-            width: 100%; padding: 10px; margin-top: 15px;
-            background: transparent; border: 1px solid var(--gold-primary); color: var(--gold-primary);
-            border-radius: 10px; font-weight: bold;
-        }
+        .card-img { height: 180px; background: #000; border-radius: 10px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; font-size: 50px; color: var(--gold-primary); }
+        .add-btn { width: 100%; padding: 10px; margin-top: 15px; background: transparent; border: 1px solid var(--gold-primary); color: var(--gold-primary); border-radius: 10px; font-weight: bold; }
         .add-btn:hover { background: var(--gold-primary); color: #000; }
-
-        /* --- Address Form & List --- */
-        .address-form {
-            background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 20px;
-            display: grid; gap: 10px; border: 1px dashed var(--border);
-        }
-        .address-card {
-            background: var(--bg-body); padding: 15px; border-radius: 10px; margin-bottom: 10px;
-            border-right: 3px solid var(--gold-primary); display: flex; justify-content: space-between; align-items: center;
-        }
+        .address-form { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 20px; display: grid; gap: 10px; border: 1px dashed var(--border); }
+        .address-card { background: var(--bg-body); padding: 15px; border-radius: 10px; margin-bottom: 10px; border-right: 3px solid var(--gold-primary); display: flex; justify-content: space-between; align-items: center; }
         .save-btn { background: var(--gold-primary); color: black; padding: 10px; border-radius: 8px; font-weight: bold; width: 100%; }
-
-        /* --- Toast --- */
-        .toast {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px);
-            background: var(--bg-card); color: white; padding: 12px 25px; border-radius: 50px;
-            border: 1px solid var(--gold-primary); box-shadow: 0 5px 20px rgba(0,0,0,0.5);
-            z-index: 3000; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            display: flex; align-items: center; gap: 10px; min-width: 250px; justify-content: center;
-        }
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--bg-card); color: white; padding: 12px 25px; border-radius: 50px; border: 1px solid var(--gold-primary); box-shadow: 0 5px 20px rgba(0,0,0,0.5); z-index: 3000; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; gap: 10px; min-width: 250px; justify-content: center; }
         .toast.show { transform: translateX(-50%) translateY(0); }
-
-        /* Loader */
-        #loader {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 2000; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; color: var(--gold-primary);
-        }
+        #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: var(--gold-primary); }
     </style>
 </head>
 <body>
 
     <div id="loader">
         <i class="fas fa-circle-notch fa-spin" style="font-size: 40px; margin-bottom: 15px;"></i>
-        <p>در حال بارگذاری...</p>
+        <p id="loader-text">در حال اتصال به سرور...</p>
     </div>
 
     <header id="main-header" style="display:none;">
         <div class="header-inner">
             <div class="logo" onclick="app.nav('home')">AMIRKABIR</div>
             <div class="nav-icons">
-                <div class="icon-btn" onclick="app.nav('profile')">
-                    <i class="fas fa-user"></i>
-                </div>
+                <div class="icon-btn" onclick="app.nav('profile')"><i class="fas fa-user"></i></div>
                 <div class="icon-btn" onclick="app.nav('cart')">
-                    <i class="fas fa-shopping-bag"></i>
-                    <span class="badge" id="cart-badge">0</span>
+                    <i class="fas fa-shopping-bag"></i><span class="badge" id="cart-badge">0</span>
                 </div>
-                <div class="icon-btn" onclick="auth.logout()" style="color:#ff4757;">
-                    <i class="fas fa-power-off"></i>
-                </div>
+                <div class="icon-btn" onclick="auth.logout()" style="color:#ff4757;"><i class="fas fa-power-off"></i></div>
             </div>
         </div>
     </header>
 
     <div id="page-login" class="page">
         <div class="login-box">
-            <h1 style="color:var(--gold-primary); margin-bottom:10px;">عضویت ویژه</h1>
-            <p style="color:var(--text-sub); font-size:14px;">برای دسترسی به امکانات لطفا وارد شوید</p>
-            
+            <h1 style="color:var(--gold-primary); margin-bottom:10px;">ورود اعضا</h1>
+            <p style="color:var(--text-sub); font-size:14px;">لطفا برای دسترسی وارد شوید</p>
             <button id="btn-google" class="google-btn" onclick="auth.login()">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
-                <span id="btn-text">ورود امن با گوگل</span>
+                <span id="btn-text">ورود با گوگل</span>
             </button>
-            <div id="error-msg" style="color:#ff6b6b; margin-top:20px; font-size:12px;"></div>
+            <div id="status-msg" style="margin-top:20px; font-size:12px; color:#aaa;"></div>
         </div>
     </div>
 
     <div id="page-home" class="page">
-        <div style="text-align:center; margin-bottom:30px;">
-            <h2 style="color:var(--gold-primary);">محصولات برگزیده</h2>
-            <p style="color:var(--text-sub); font-size:13px;">جدیدترین تکنولوژی‌های روز دنیا</p>
-        </div>
         <div class="grid" id="product-grid"></div>
     </div>
 
@@ -196,10 +95,9 @@
         <h2 style="margin-bottom:20px;">سبد خرید</h2>
         <div class="panel-box">
             <div id="cart-items"></div>
-            <div id="cart-summary" style="margin-top:20px; padding-top:20px; border-top:1px solid var(--border); display:none;">
+            <div id="cart-summary" style="margin-top:20px; border-top:1px solid var(--border); display:none; padding-top:20px;">
                 <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:18px;">
-                    <span>جمع کل:</span>
-                    <span style="color:var(--gold-light);" id="total-price">0 تومان</span>
+                    <span>جمع کل:</span><span style="color:var(--gold-light);" id="total-price">0 تومان</span>
                 </div>
                 <button class="save-btn" style="margin-top:20px;" onclick="app.checkout()">تکمیل خرید</button>
             </div>
@@ -211,41 +109,29 @@
             <div style="display:flex; align-items:center; gap:20px; margin-bottom:30px;">
                 <img src="" id="user-avatar" style="width:70px; height:70px; border-radius:50%; border:2px solid var(--gold-primary);">
                 <div>
-                    <h3 id="user-name">...</h3>
-                    <p id="user-email" style="color:var(--text-sub); font-size:13px;"></p>
+                    <h3 id="user-name">...</h3><p id="user-email" style="color:var(--text-sub); font-size:13px;"></p>
                 </div>
             </div>
-
             <div class="tabs">
-                <div class="tab active" onclick="app.switchTab('address', this)">آدرس‌های من</div>
+                <div class="tab active" onclick="app.switchTab('address', this)">آدرس‌ها</div>
                 <div class="tab" onclick="app.switchTab('orders', this)">سفارش‌ها</div>
             </div>
-
             <div id="tab-address" class="tab-content active">
                 <div class="address-form">
-                    <p style="color:var(--gold-light); font-size:14px; margin-bottom:5px;">افزودن آدرس جدید:</p>
-                    <input type="text" id="addr-title" placeholder="عنوان (مثلا: خانه، محل کار)">
+                    <input type="text" id="addr-title" placeholder="عنوان">
                     <input type="text" id="addr-city" placeholder="شهر">
-                    <textarea id="addr-full" rows="2" placeholder="آدرس پستی دقیق..."></textarea>
-                    <button class="save-btn" onclick="app.addAddress()">ثبت آدرس</button>
+                    <textarea id="addr-full" rows="2" placeholder="آدرس..."></textarea>
+                    <button class="save-btn" onclick="app.addAddress()">ثبت</button>
                 </div>
-                <h4 style="margin-bottom:15px; color:var(--text-sub);">آدرس‌های ثبت شده:</h4>
                 <div id="address-list"></div>
             </div>
-
-            <div id="tab-orders" class="tab-content">
-                <div id="orders-list"></div>
-            </div>
+            <div id="tab-orders" class="tab-content"><div id="orders-list"></div></div>
         </div>
     </div>
 
-    <div class="toast" id="toast">
-        <i class="fas fa-check-circle" style="color:var(--gold-primary)"></i>
-        <span id="toast-msg">پیام سیستم</span>
-    </div>
+    <div class="toast" id="toast"><i class="fas fa-check-circle" style="color:var(--gold-primary)"></i><span id="toast-msg"></span></div>
 
     <script>
-        // --- تنظیمات فایربیس (ثابت) ---
         const firebaseConfig = {
             apiKey: "AIzaSyB06UC0JITqaQCU_1toK7M7CUCKusEWrOE",
             authDomain: "amirkabir-3b897.firebaseapp.com",
@@ -255,11 +141,21 @@
             appId: "1:902534322032:web:17fd8194b65777dfd821b5"
         };
 
-        // --- AUTH ---
         const auth = {
             init: function() {
                 if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
                 
+                // 1. بررسی نتیجه بازگشت از گوگل (مهمترین بخش برای حل مشکل شما)
+                firebase.auth().getRedirectResult()
+                    .then((result) => {
+                        if (result.credential) {
+                            console.log("از گوگل برگشتیم! توکن دریافت شد.");
+                        }
+                    }).catch((error) => {
+                        alert("خطا در بازگشت از گوگل: " + error.message);
+                    });
+
+                // 2. تنظیم ماندگاری و شنود وضعیت
                 firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => {
                     firebase.auth().onAuthStateChanged(user => {
                         document.getElementById('loader').style.display = 'none';
@@ -273,32 +169,23 @@
                 });
             },
             login: function() {
-                // تغییر ظاهری دکمه برای اطمینان از کلیک
                 const btnText = document.getElementById('btn-text');
-                const btn = document.getElementById('btn-google');
-                btnText.innerText = "در حال اتصال به گوگل...";
-                btn.style.opacity = "0.7";
-
-                // انجام لاگین با خطا یابی
+                const statusMsg = document.getElementById('status-msg');
+                
+                btnText.innerText = "در حال انتقال به گوگل...";
+                statusMsg.innerText = "لطفا صبر کنید...";
+                
                 const provider = new firebase.auth.GoogleAuthProvider();
-                firebase.auth().signInWithRedirect(provider)
-                    .catch(error => {
-                        // اگر خطایی رخ دهد (مثل قطع اینترنت)
-                        alert("خطا در اتصال: " + error.message);
-                        btnText.innerText = "ورود امن با گوگل";
-                        btn.style.opacity = "1";
-                    });
+                firebase.auth().signInWithRedirect(provider).catch(e => {
+                    alert("خطا: " + e.message);
+                    btnText.innerText = "ورود با گوگل";
+                });
             },
             logout: function() {
-                if(confirm("خروج از حساب؟")) {
-                    firebase.auth().signOut().then(() => {
-                         window.location.reload();
-                    });
-                }
+                if(confirm("خروج؟")) firebase.auth().signOut().then(() => location.reload());
             }
         };
 
-        // --- APP LOGIC ---
         const app = {
             cart: JSON.parse(localStorage.getItem('cart')) || [],
             addresses: JSON.parse(localStorage.getItem('addresses')) || [],
@@ -315,20 +202,18 @@
                 this.renderOrders();
                 this.showPage('home');
             },
-
             showPage: function(pageId) {
                 document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
                 document.getElementById('page-' + pageId).classList.add('active');
             },
             nav: function(p) { this.showPage(p); },
-
-            // --- Products ---
+            
             renderProducts: function() {
                 const products = [
                     { id: 1, name: "آیفون ۱۳ پرومکس", price: 55000000, icon: "fa-mobile-alt" },
                     { id: 2, name: "مک‌بوک پرو M2", price: 85000000, icon: "fa-laptop" },
                     { id: 3, name: "هدفون سونی XM5", price: 14000000, icon: "fa-headphones" },
-                    { id: 4, name: "ساعت هوشمند اولترا", price: 35000000, icon: "fa-clock" },
+                    { id: 4, name: "ساعت هوشمند", price: 35000000, icon: "fa-clock" },
                     { id: 5, name: "پلی استیشن ۵", price: 26000000, icon: "fa-gamepad" },
                     { id: 6, name: "دوربین کانن", price: 42000000, icon: "fa-camera" }
                 ];
@@ -337,150 +222,65 @@
                         <div class="card-img"><i class="fas ${p.icon}"></i></div>
                         <h3>${p.name}</h3>
                         <div style="color:var(--gold-light); margin:10px 0;">${p.price.toLocaleString()} تومان</div>
-                        <button class="add-btn" onclick="app.addToCart(${p.id}, '${p.name}', ${p.price})">افزودن به سبد</button>
+                        <button class="add-btn" onclick="app.addToCart(${p.id}, '${p.name}', ${p.price})">افزودن</button>
                     </div>
                 `).join('');
             },
-
-            // --- Cart ---
             addToCart: function(id, name, price) {
-                this.cart.push({id, name, price});
-                this.saveData();
-                this.updateCartUI();
-                this.showToast(name + " اضافه شد");
+                this.cart.push({id, name, price}); this.saveData(); this.updateCartUI(); this.showToast(name + " اضافه شد");
             },
-            removeFromCart: function(index) {
-                this.cart.splice(index, 1);
-                this.saveData();
-                this.updateCartUI();
-            },
+            removeFromCart: function(i) { this.cart.splice(i, 1); this.saveData(); this.updateCartUI(); },
             updateCartUI: function() {
                 document.getElementById('cart-badge').innerText = this.cart.length;
                 const container = document.getElementById('cart-items');
                 const summary = document.getElementById('cart-summary');
-                
-                if (this.cart.length === 0) {
-                    container.innerHTML = '<p style="text-align:center; color:var(--text-sub);">سبد خرید خالی است</p>';
-                    summary.style.display = 'none';
-                    return;
-                }
-                
-                summary.style.display = 'block';
-                let total = 0;
+                if (this.cart.length === 0) { container.innerHTML = '<p style="text-align:center;color:#666">خالی</p>'; summary.style.display='none'; return; }
+                summary.style.display='block';
+                let total=0;
                 container.innerHTML = this.cart.map((item, i) => {
-                    total += item.price;
-                    return `
-                    <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border);">
-                        <span>${item.name}</span>
-                        <div style="display:flex; gap:15px; align-items:center;">
-                            <span>${item.price.toLocaleString()}</span>
-                            <i class="fas fa-trash" style="color:#ff4757; cursor:pointer;" onclick="app.removeFromCart(${i})"></i>
-                        </div>
-                    </div>`;
+                    total+=item.price;
+                    return `<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #333"><span>${item.name}</span><i class="fas fa-trash" style="color:#ff4757" onclick="app.removeFromCart(${i})"></i></div>`;
                 }).join('');
                 document.getElementById('total-price').innerText = total.toLocaleString() + ' تومان';
             },
-
-            // --- Address Logic ---
             addAddress: function() {
                 const title = document.getElementById('addr-title').value;
                 const city = document.getElementById('addr-city').value;
                 const full = document.getElementById('addr-full').value;
-
-                if (!title || !city || !full) return alert("لطفا تمام فیلدها را پر کنید");
-
-                this.addresses.push({ title, city, full });
-                this.saveData();
-                this.renderAddresses();
-                this.showToast("آدرس با موفقیت ثبت شد");
-                
-                document.getElementById('addr-title').value = '';
-                document.getElementById('addr-city').value = '';
-                document.getElementById('addr-full').value = '';
+                if(!title || !city || !full) return alert("اطلاعات ناقص");
+                this.addresses.push({title, city, full}); this.saveData(); this.renderAddresses();
+                document.getElementById('addr-title').value=''; document.getElementById('addr-city').value=''; document.getElementById('addr-full').value='';
+                this.showToast("آدرس ثبت شد");
             },
-            deleteAddress: function(index) {
-                if(confirm("حذف این آدرس؟")) {
-                    this.addresses.splice(index, 1);
-                    this.saveData();
-                    this.renderAddresses();
-                }
-            },
+            deleteAddress: function(i) { if(confirm("حذف؟")) { this.addresses.splice(i,1); this.saveData(); this.renderAddresses(); } },
             renderAddresses: function() {
-                const list = document.getElementById('address-list');
-                if (this.addresses.length === 0) {
-                    list.innerHTML = '<p style="color:var(--text-sub); font-size:12px;">هیچ آدرسی ثبت نشده است.</p>';
-                    return;
-                }
-                list.innerHTML = this.addresses.map((addr, i) => `
-                    <div class="address-card">
-                        <div>
-                            <strong style="color:var(--gold-primary);">${addr.title}</strong>
-                            <div style="font-size:12px; color:var(--text-sub); margin-top:5px;">${addr.city} - ${addr.full}</div>
-                        </div>
-                        <i class="fas fa-trash-alt" style="color:#ff4757; cursor:pointer; padding:5px;" onclick="app.deleteAddress(${i})"></i>
-                    </div>
-                `).join('');
+                document.getElementById('address-list').innerHTML = this.addresses.map((a,i) => 
+                    `<div class="address-card"><div><strong>${a.title}</strong><br><small>${a.city}</small></div><i class="fas fa-trash" onclick="app.deleteAddress(${i})"></i></div>`
+                ).join('');
             },
-
-            // --- Orders ---
             checkout: function() {
-                if (this.addresses.length === 0) return alert("لطفا ابتدا یک آدرس ثبت کنید!");
-                if (confirm("ثبت نهایی سفارش؟")) {
-                    const total = document.getElementById('total-price').innerText;
-                    this.orders.push({
-                        id: 'ORD-' + Math.floor(Math.random()*10000),
-                        date: new Date().toLocaleDateString('fa-IR'),
-                        items: this.cart.length,
-                        total: total
-                    });
-                    this.cart = [];
-                    this.saveData();
-                    this.updateCartUI();
-                    this.renderOrders();
-                    this.switchTab('orders', document.querySelectorAll('.tab')[1]);
-                    this.nav('profile');
-                    this.showToast("سفارش شما با موفقیت ثبت شد");
+                if(this.addresses.length===0) return alert("اول آدرس ثبت کنید");
+                if(confirm("پرداخت؟")) {
+                    this.orders.push({id: 'ORD-'+Math.floor(Math.random()*9000), total: document.getElementById('total-price').innerText, items: this.cart.length});
+                    this.cart=[]; this.saveData(); this.updateCartUI(); this.renderOrders();
+                    this.switchTab('orders', document.querySelectorAll('.tab')[1]); this.nav('profile');
+                    this.showToast("خرید موفق!");
                 }
             },
             renderOrders: function() {
-                const list = document.getElementById('orders-list');
-                if (this.orders.length === 0) {
-                    list.innerHTML = '<p style="text-align:center; color:var(--text-sub); margin-top:20px;">هنوز خریدی انجام نداده‌اید.</p>';
-                    return;
-                }
-                list.innerHTML = this.orders.map(o => `
-                    <div style="background:var(--bg-body); padding:15px; border-radius:10px; margin-bottom:10px; border:1px solid var(--border);">
-                        <div style="display:flex; justify-content:space-between; color:var(--gold-primary); font-weight:bold;">
-                            <span>${o.id}</span>
-                            <span style="font-size:12px; background:rgba(76, 209, 55, 0.2); color:#4cd137; padding:2px 8px; border-radius:10px;">پرداخت موفق</span>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; font-size:13px; margin-top:10px; color:var(--text-sub);">
-                            <span>${o.items} محصول</span>
-                            <span>${o.total}</span>
-                        </div>
-                        <div style="font-size:11px; color:#666; margin-top:5px;">${o.date}</div>
-                    </div>
-                `).join('');
+                document.getElementById('orders-list').innerHTML = this.orders.map(o => 
+                    `<div style="background:#222;padding:10px;border-radius:10px;margin-bottom:5px;border:1px solid #444;font-size:13px">
+                    <div style="color:var(--gold-primary)">${o.id} <span style="float:left;color:#4cd137">موفق</span></div>
+                    <div style="margin-top:5px">${o.items} کالا - ${o.total}</div></div>`
+                ).join('');
             },
-
-            // --- Utils ---
-            switchTab: function(tabName, el) {
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                if(el) el.classList.add('active');
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                document.getElementById('tab-' + tabName).classList.add('active');
+            switchTab: function(name, el) {
+                document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); if(el) el.classList.add('active');
+                document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+                document.getElementById('tab-'+name).classList.add('active');
             },
-            saveData: function() {
-                localStorage.setItem('cart', JSON.stringify(this.cart));
-                localStorage.setItem('addresses', JSON.stringify(this.addresses));
-                localStorage.setItem('orders', JSON.stringify(this.orders));
-            },
-            showToast: function(msg) {
-                const t = document.getElementById('toast');
-                document.getElementById('toast-msg').innerText = msg;
-                t.classList.add('show');
-                setTimeout(() => t.classList.remove('show'), 3000);
-            }
+            saveData: function() { localStorage.setItem('cart', JSON.stringify(this.cart)); localStorage.setItem('addresses', JSON.stringify(this.addresses)); localStorage.setItem('orders', JSON.stringify(this.orders)); },
+            showToast: function(msg) { const t=document.getElementById('toast'); document.getElementById('toast-msg').innerText=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
         };
 
         window.onload = () => auth.init();

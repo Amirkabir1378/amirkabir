@@ -222,14 +222,46 @@
             text-align: center; cursor: pointer; transition: 0.3s;
         }
         .upload-box:hover { border-color: var(--gold-dark); }
+        .upload-box.uploaded {
+            border-color: #2ecc71;
+            background: rgba(46, 204, 113, 0.1);
+        }
         .upload-preview {
             max-width: 100%; max-height: 300px; margin-top: 15px; border-radius: 8px;
+        }
+        .upload-status {
+            margin-top: 10px; color: var(--gold-primary);
+            font-size: 14px; display: none;
+        }
+        .upload-status.show { display: block; }
+        .upload-status.success { color: #2ecc71; }
+        .upload-status.error { color: #ff4757; }
+
+        .progress-bar {
+            width: 100%; height: 4px; background: var(--border);
+            border-radius: 2px; margin-top: 10px; overflow: hidden;
+            display: none;
+        }
+        .progress-bar.show { display: block; }
+        .progress-fill {
+            height: 100%; background: var(--gold-primary);
+            width: 0%; transition: width 0.3s;
         }
 
         #loader {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 2000; display: flex; flex-direction: column;
+            background: rgba(0, 0, 0, 0.95); z-index: 2000; 
+            display: flex; flex-direction: column;
             justify-content: center; align-items: center; color: var(--gold-primary);
+        }
+        #loader .spinner {
+            width: 50px; height: 50px; border: 4px solid var(--border);
+            border-top-color: var(--gold-primary);
+            border-radius: 50%; animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         .empty-state {
@@ -241,7 +273,8 @@
 <body>
 
     <div id="loader">
-        <p style="font-size:20px;">[translate:در حال بررسی وضعیت...]</p>
+        <div class="spinner"></div>
+        <p style="font-size:20px;" id="loader-text">در حال بررسی وضعیت...</p>
     </div>
 
     <header id="main-header" style="display:none;">
@@ -262,126 +295,123 @@
         </div>
     </header>
 
-    <!-- صفحه ورود -->
     <div id="page-login" class="page">
         <div class="login-box">
-            <h1 style="color:var(--gold-primary);">[translate:ورود اعضا]</h1>
-            <p style="color:var(--text-sub);">[translate:لطفا برای دسترسی وارد شوید]</p>
+            <h1 style="color:var(--gold-primary);">ورود اعضا</h1>
+            <p style="color:var(--text-sub);">لطفا برای دسترسی وارد شوید</p>
             
             <button class="google-btn" onclick="auth.login()">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
-                [translate:ورود با گوگل]
+                ورود با گوگل
             </button>
 
             <div id="error-msg"></div>
         </div>
     </div>
 
-    <!-- صفحه اصلی (محصولات) -->
     <div id="page-home" class="page">
-        <h2 style="color:var(--gold-primary); margin-bottom: 20px;">[translate:محصولات فروشگاه]</h2>
+        <h2 style="color:var(--gold-primary); margin-bottom: 20px;">محصولات فروشگاه</h2>
         <div class="grid" id="product-grid"></div>
     </div>
 
-    <!-- صفحه پروفایل -->
     <div id="page-profile" class="page">
         <button class="back-btn" onclick="app.nav('home')">
-            <i class="fas fa-arrow-right"></i> [translate:بازگشت]
+            <i class="fas fa-arrow-right"></i> بازگشت
         </button>
 
         <div class="profile-header">
             <img id="profile-avatar" class="profile-avatar" src="" alt="avatar">
             <div class="profile-info">
-                <h2 id="profile-name">[translate:کاربر]</h2>
+                <h2 id="profile-name">کاربر</h2>
                 <p id="profile-email">user@example.com</p>
             </div>
         </div>
 
         <div class="section-box">
             <div class="section-title">
-                <span>[translate:آدرس‌های من]</span>
-                <button class="btn-primary" onclick="app.openAddressModal()">[translate:افزودن آدرس]</button>
+                <span>آدرس‌های من</span>
+                <button class="btn-primary" onclick="app.openAddressModal()">افزودن آدرس</button>
             </div>
             <div id="address-list"></div>
         </div>
     </div>
 
-    <!-- صفحه سبد خرید -->
     <div id="page-cart" class="page">
         <button class="back-btn" onclick="app.nav('home')">
-            <i class="fas fa-arrow-right"></i> [translate:بازگشت]
+            <i class="fas fa-arrow-right"></i> بازگشت
         </button>
 
-        <h2 style="color:var(--gold-primary); margin-bottom:20px;">[translate:سبد خرید]</h2>
+        <h2 style="color:var(--gold-primary); margin-bottom:20px;">سبد خرید</h2>
         <div id="cart-items"></div>
         <div id="cart-total" style="text-align:left; font-size:20px; margin-top:20px; color:var(--gold-light);"></div>
         <button class="checkout-btn" id="checkout-btn" onclick="app.proceedCheckout()" disabled>
-            [translate:ادامه خرید]
+            ادامه خرید
         </button>
     </div>
 
-    <!-- صفحه تکمیل خرید -->
     <div id="page-checkout" class="page">
         <button class="back-btn" onclick="app.nav('cart')">
-            <i class="fas fa-arrow-right"></i> [translate:بازگشت به سبد]
+            <i class="fas fa-arrow-right"></i> بازگشت به سبد
         </button>
 
-        <h2 style="color:var(--gold-primary); margin-bottom:20px;">[translate:تکمیل خرید]</h2>
+        <h2 style="color:var(--gold-primary); margin-bottom:20px;">تکمیل خرید</h2>
 
         <div class="section-box">
-            <div class="section-title">[translate:انتخاب آدرس]</div>
+            <div class="section-title">انتخاب آدرس</div>
             <div id="checkout-address-list"></div>
         </div>
 
         <div class="section-box">
-            <div class="section-title">[translate:اطلاعات تکمیلی]</div>
+            <div class="section-title">اطلاعات تکمیلی</div>
             <div class="form-group">
-                <label>[translate:نام و نام خانوادگی]</label>
-                <input type="text" id="checkout-fullname" placeholder="[translate:محمد احمدی]">
+                <label>نام و نام خانوادگی</label>
+                <input type="text" id="checkout-fullname" placeholder="محمد احمدی">
             </div>
             <div class="form-group">
-                <label>[translate:کد پستی (۱۰ رقم)]</label>
+                <label>کد پستی (۱۰ رقم)</label>
                 <input type="text" id="checkout-postal" placeholder="1234567890" maxlength="10">
             </div>
         </div>
 
         <div class="section-box">
-            <div class="section-title">[translate:آپلود فیش واریزی]</div>
-            <div class="upload-box" onclick="document.getElementById('receipt-file').click()">
+            <div class="section-title">آپلود فیش واریزی</div>
+            <div class="upload-box" id="upload-box" onclick="document.getElementById('receipt-file').click()">
                 <i class="fas fa-cloud-upload-alt" style="font-size:40px; color:var(--gold-primary);"></i>
-                <p style="margin-top:10px;">[translate:کلیک کنید و فیش خود را انتخاب کنید]</p>
-                <input type="file" id="receipt-file" accept="image/*" style="display:none;" onchange="app.previewReceipt(event)">
+                <p style="margin-top:10px;">کلیک کنید و فیش خود را انتخاب کنید</p>
+                <input type="file" id="receipt-file" accept="image/*" style="display:none;" onchange="app.handleFileSelect(event)">
             </div>
+            <div class="progress-bar" id="upload-progress">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <div class="upload-status" id="upload-status"></div>
             <img id="receipt-preview" class="upload-preview" style="display:none;">
         </div>
 
-        <button class="checkout-btn" onclick="app.submitOrder()">[translate:ثبت نهایی سفارش]</button>
+        <button class="checkout-btn" onclick="app.submitOrder()">ثبت نهایی سفارش</button>
     </div>
 
-    <!-- مودال افزودن/ویرایش آدرس -->
     <div id="address-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="address-modal-title">[translate:افزودن آدرس]</h3>
+                <h3 id="address-modal-title">افزودن آدرس</h3>
                 <button class="close-modal" onclick="app.closeAddressModal()">×</button>
             </div>
             <div class="form-group">
-                <label>[translate:عنوان آدرس]</label>
-                <input type="text" id="addr-title" placeholder="[translate:خانه، محل کار، ...]">
+                <label>عنوان آدرس</label>
+                <input type="text" id="addr-title" placeholder="خانه، محل کار، ...">
             </div>
             <div class="form-group">
-                <label>[translate:آدرس کامل]</label>
-                <textarea id="addr-full" placeholder="[translate:استان، شهر، خیابان، پلاک، واحد]"></textarea>
+                <label>آدرس کامل</label>
+                <textarea id="addr-full" placeholder="استان، شهر، خیابان، پلاک، واحد"></textarea>
             </div>
             <div style="display:flex; gap:10px;">
-                <button class="btn-primary" onclick="app.saveAddress()">[translate:ذخیره]</button>
-                <button class="btn-secondary" onclick="app.closeAddressModal()">[translate:انصراف]</button>
+                <button class="btn-primary" onclick="app.saveAddress()">ذخیره</button>
+                <button class="btn-secondary" onclick="app.closeAddressModal()">انصراف</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- تنظیمات ---
         const TELEGRAM_BOT_TOKEN = '8064546197:AAH_ozKRmHjzwaL21uljL3WV2a16w6Lv-e0';
         const TELEGRAM_CHAT_ID = '1548961271';
 
@@ -394,7 +424,6 @@
             appId: "1:902534322032:web:17fd8194b65777dfd821b5"
         };
 
-        // --- احراز هویت ---
         const auth = {
             currentUser: null,
 
@@ -448,12 +477,12 @@
             }
         };
 
-        // --- برنامه اصلی ---
         const app = {
             cart: [],
             addresses: [],
             selectedAddressId: null,
             editingAddressId: null,
+            uploadedFileUrl: null,
 
             products: [
                 { id: 1, name: "آیفون ۱۳ پرومکس", price: 55000000, icon: "fa-mobile-alt" },
@@ -465,12 +494,10 @@
             initUser: function(user) {
                 document.getElementById('main-header').style.display = 'flex';
                 
-                // بارگذاری اطلاعات پروفایل
                 document.getElementById('profile-avatar').src = user.photoURL || 'https://via.placeholder.com/80';
                 document.getElementById('profile-name').innerText = user.displayName || 'کاربر';
                 document.getElementById('profile-email').innerText = user.email;
 
-                // بارگذاری داده‌های محلی
                 this.loadLocalData();
                 this.renderProducts();
                 this.showPage('home');
@@ -596,7 +623,6 @@
                 }
             },
 
-            // --- آدرس‌ها ---
             renderAddresses: function() {
                 const container = document.getElementById('address-list');
                 
@@ -675,7 +701,6 @@
                 }
             },
 
-            // --- تکمیل خرید ---
             proceedCheckout: function() {
                 if (this.addresses.length === 0) {
                     alert('لطفا ابتدا یک آدرس ثبت کنید');
@@ -702,94 +727,151 @@
                 this.renderCheckout();
             },
 
-            previewReceipt: function(event) {
+            handleFileSelect: function(event) {
                 const file = event.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const preview = document.getElementById('receipt-preview');
-                        preview.src = e.target.result;
-                        preview.style.display = 'block';
-                    };
-                    reader.readAsDataURL(file);
+                if (!file) return;
+
+                if (!file.type.startsWith('image/')) {
+                    this.showUploadStatus('فقط فایل‌های تصویری مجاز است', 'error');
+                    return;
                 }
+
+                if (file.size > 5 * 1024 * 1024) {
+                    this.showUploadStatus('حجم فایل باید کمتر از ۵ مگابایت باشد', 'error');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const preview = document.getElementById('receipt-preview');
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+
+                this.uploadFile(file);
+            },
+
+            uploadFile: function(file) {
+                const progressBar = document.getElementById('upload-progress');
+                const progressFill = document.getElementById('progress-fill');
+                const uploadBox = document.getElementById('upload-box');
+                
+                progressBar.classList.add('show');
+                this.showUploadStatus('در حال آپلود...', '');
+
+                const storageRef = firebase.storage().ref();
+                const fileName = `receipts/${Date.now()}_${file.name}`;
+                const uploadTask = storageRef.child(fileName).put(file);
+
+                uploadTask.on('state_changed',
+                    (snapshot) => {
+                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        progressFill.style.width = progress + '%';
+                        this.showUploadStatus(`در حال آپلود... ${Math.round(progress)}%`, '');
+                    },
+                    (error) => {
+                        console.error('Upload error:', error);
+                        progressBar.classList.remove('show');
+                        this.showUploadStatus('خطا در آپلود فایل: ' + error.message, 'error');
+                    },
+                    () => {
+                        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                            this.uploadedFileUrl = downloadURL;
+                            progressBar.classList.remove('show');
+                            uploadBox.classList.add('uploaded');
+                            this.showUploadStatus('✓ فایل با موفقیت آپلود شد', 'success');
+                            console.log('File uploaded successfully:', downloadURL);
+                        });
+                    }
+                );
+            },
+
+            showUploadStatus: function(message, type) {
+                const status = document.getElementById('upload-status');
+                status.innerText = message;
+                status.className = 'upload-status show ' + type;
             },
 
             submitOrder: async function() {
                 const fullname = document.getElementById('checkout-fullname').value.trim();
                 const postal = document.getElementById('checkout-postal').value.trim();
-                const receiptFile = document.getElementById('receipt-file').files[0];
                 
                 if (!this.selectedAddressId) {
                     alert('لطفا آدرس را انتخاب کنید');
                     return;
                 }
-                if (!fullname || !postal) {
-                    alert('لطفا نام و کد پستی را وارد کنید');
+                if (!fullname) {
+                    alert('لطفا نام و نام خانوادگی را وارد کنید');
                     return;
                 }
-                if (postal.length !== 10 || !/^\d+$/.test(postal)) {
+                if (!postal || postal.length !== 10 || !/^\d+$/.test(postal)) {
                     alert('کد پستی باید ۱۰ رقم باشد');
                     return;
                 }
-                if (!receiptFile) {
+                if (!this.uploadedFileUrl) {
                     alert('لطفا فیش واریزی را آپلود کنید');
                     return;
                 }
                 
                 const loader = document.getElementById('loader');
+                const loaderText = document.getElementById('loader-text');
                 loader.style.display = 'flex';
-                loader.querySelector('p').innerText = 'در حال ارسال سفارش...';
+                loaderText.innerText = 'در حال ارسال سفارش...';
                 
                 try {
-                    // آپلود فیش
-                    const storageRef = firebase.storage().ref();
-                    const receiptRef = storageRef.child(`receipts/${Date.now()}_${receiptFile.name}`);
-                    await receiptRef.put(receiptFile);
-                    const receiptUrl = await receiptRef.getDownloadURL();
-                    
-                    // آماده‌سازی پیام
                     const selectedAddr = this.addresses.find(a => a.id === this.selectedAddressId);
                     const total = this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
                     
-                    let message = `🛍️ سفارش جدید\n\n`;
-                    message += `👤 نام: ${fullname}\n`;
-                    message += `📧 ایمیل: ${auth.currentUser.email}\n`;
-                    message += `📮 کد پستی: ${postal}\n\n`;
-                    message += `📍 آدرس: ${selectedAddr.title}\n${selectedAddr.full}\n\n`;
-                    message += `🛒 محصولات:\n`;
+                    let message = `🛍️ *سفارش جدید*\n\n`;
+                    message += `👤 *نام:* ${fullname}\n`;
+                    message += `📧 *ایمیل:* ${auth.currentUser.email}\n`;
+                    message += `📮 *کد پستی:* ${postal}\n\n`;
+                    message += `📍 *آدرس:* ${selectedAddr.title}\n${selectedAddr.full}\n\n`;
+                    message += `🛒 *محصولات:*\n`;
                     this.cart.forEach(item => {
                         message += `• ${item.name} × ${item.quantity} = ${this.formatPrice(item.price * item.quantity)} تومان\n`;
                     });
-                    message += `\n💰 مجموع: ${this.formatPrice(total)} تومان\n\n`;
-                    message += `📷 فیش واریزی: ${receiptUrl}`;
+                    message += `\n💰 *مجموع:* ${this.formatPrice(total)} تومان\n\n`;
+                    message += `📷 [فیش واریزی](${this.uploadedFileUrl})`;
                     
-                    // ارسال به تلگرام
-                    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                    console.log('Sending to Telegram...');
+                    
+                    const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             chat_id: TELEGRAM_CHAT_ID,
-                            text: message
+                            text: message,
+                            parse_mode: 'Markdown'
                         })
                     });
+
+                    const result = await response.json();
                     
-                    // پاکسازی
+                    if (!result.ok) {
+                        throw new Error(result.description || 'خطا در ارسال به تلگرام');
+                    }
+                    
+                    console.log('Telegram response:', result);
+                    
                     this.cart = [];
+                    this.uploadedFileUrl = null;
+                    this.selectedAddressId = null;
                     this.saveLocalData();
                     this.updateCartBadge();
                     
                     loader.style.display = 'none';
-                    alert('سفارش شما با موفقیت ثبت شد!\nبه زودی با شما تماس خواهیم گرفت.');
+                    alert('✅ سفارش شما با موفقیت ثبت شد!\n\nبه زودی با شما تماس خواهیم گرفت.');
                     this.showPage('home');
                     
                 } catch (error) {
                     loader.style.display = 'none';
-                    alert('خطا در ثبت سفارش: ' + error.message);
+                    console.error('Order submission error:', error);
+                    alert('❌ خطا در ثبت سفارش:\n' + error.message + '\n\nلطفا دوباره تلاش کنید.');
                 }
             },
 
-            // --- کمکی ---
             formatPrice: function(num) {
                 return new Intl.NumberFormat('fa-IR').format(num);
             },
@@ -800,7 +882,7 @@
                     position: fixed; bottom: 20px; right: 20px;
                     background: var(--gold-primary); color: #000;
                     padding: 15px 25px; border-radius: 10px;
-                    z-index: 3000; animation: slideIn 0.3s;
+                    z-index: 3000; box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
                 `;
                 notif.innerText = text;
                 document.body.appendChild(notif);

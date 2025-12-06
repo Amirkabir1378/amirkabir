@@ -191,6 +191,13 @@
         }
         .form-group textarea { resize: vertical; min-height: 80px; }
 
+        .form-row {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px;
+        }
+        @media (max-width: 768px) {
+            .form-row { grid-template-columns: 1fr; }
+        }
+
         .btn-primary {
             background: var(--gold-primary); color: #000;
             padding: 12px 25px; border-radius: 8px; font-weight: bold;
@@ -220,11 +227,16 @@
         .upload-box {
             border: 2px dashed var(--border); padding: 30px; border-radius: 10px;
             text-align: center; cursor: pointer; transition: 0.3s;
+            position: relative;
         }
         .upload-box:hover { border-color: var(--gold-dark); }
         .upload-box.uploaded {
             border-color: #2ecc71;
             background: rgba(46, 204, 113, 0.1);
+        }
+        .upload-box.uploading {
+            pointer-events: none;
+            opacity: 0.7;
         }
         .upload-preview {
             max-width: 100%; max-height: 300px; margin-top: 15px; border-radius: 8px;
@@ -238,14 +250,14 @@
         .upload-status.error { color: #ff4757; }
 
         .progress-bar {
-            width: 100%; height: 4px; background: var(--border);
-            border-radius: 2px; margin-top: 10px; overflow: hidden;
+            width: 100%; height: 6px; background: var(--border);
+            border-radius: 3px; margin-top: 10px; overflow: hidden;
             display: none;
         }
         .progress-bar.show { display: block; }
         .progress-fill {
-            height: 100%; background: var(--gold-primary);
-            width: 0%; transition: width 0.3s;
+            height: 100%; background: linear-gradient(90deg, var(--gold-dark), var(--gold-primary));
+            width: 0%; transition: width 0.3s ease;
         }
 
         #loader {
@@ -363,13 +375,27 @@
 
         <div class="section-box">
             <div class="section-title">اطلاعات تکمیلی</div>
-            <div class="form-group">
-                <label>نام و نام خانوادگی</label>
-                <input type="text" id="checkout-fullname" placeholder="محمد احمدی">
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>نام و نام خانوادگی *</label>
+                    <input type="text" id="checkout-fullname" placeholder="محمد احمدی">
+                </div>
+                <div class="form-group">
+                    <label>شماره موبایل *</label>
+                    <input type="tel" id="checkout-mobile" placeholder="09123456789" maxlength="11">
+                </div>
             </div>
-            <div class="form-group">
-                <label>کد پستی (۱۰ رقم)</label>
-                <input type="text" id="checkout-postal" placeholder="1234567890" maxlength="10">
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>کد پستی (۱۰ رقم) *</label>
+                    <input type="text" id="checkout-postal" placeholder="1234567890" maxlength="10">
+                </div>
+                <div class="form-group">
+                    <label>شماره پیگیری واریز (اختیاری)</label>
+                    <input type="text" id="checkout-tracking" placeholder="123456789">
+                </div>
             </div>
         </div>
 
@@ -378,6 +404,7 @@
             <div class="upload-box" id="upload-box" onclick="document.getElementById('receipt-file').click()">
                 <i class="fas fa-cloud-upload-alt" style="font-size:40px; color:var(--gold-primary);"></i>
                 <p style="margin-top:10px;">کلیک کنید و فیش خود را انتخاب کنید</p>
+                <p style="font-size:12px; color:var(--text-sub); margin-top:5px;">حداکثر ۵ مگابایت</p>
                 <input type="file" id="receipt-file" accept="image/*" style="display:none;" onchange="app.handleFileSelect(event)">
             </div>
             <div class="progress-bar" id="upload-progress">
@@ -483,6 +510,7 @@
             selectedAddressId: null,
             editingAddressId: null,
             uploadedFileUrl: null,
+            isUploading: false,
 
             products: [
                 { id: 1, name: "آیفون ۱۳ پرومکس", price: 55000000, icon: "fa-mobile-alt" },
@@ -731,6 +759,11 @@
                 const file = event.target.files[0];
                 if (!file) return;
 
+                if (this.isUploading) {
+                    alert('لطفا صبر کنید، فایل قبلی در حال آپلود است');
+                    return;
+                }
+
                 if (!file.type.startsWith('image/')) {
                     this.showUploadStatus('فقط فایل‌های تصویری مجاز است', 'error');
                     return;
@@ -753,38 +786,69 @@
             },
 
             uploadFile: function(file) {
+                this.isUploading = true;
                 const progressBar = document.getElementById('upload-progress');
                 const progressFill = document.getElementById('progress-fill');
                 const uploadBox = document.getElementById('upload-box');
                 
+                uploadBox.classList.add('uploading');
                 progressBar.classList.add('show');
-                this.showUploadStatus('در حال آپلود...', '');
+                progressFill.style.width = '0%';
+                this.showUploadStatus('در حال آپلود... 0%', '');
 
-                const storageRef = firebase.storage().ref();
-                const fileName = `receipts/${Date.now()}_${file.name}`;
-                const uploadTask = storageRef.child(fileName).put(file);
+                try {
+                    const storageRef = firebase.storage().ref();
+                    const fileName = `receipts/${Date.now()}_${file.name}`;
+                    const uploadTask = storageRef.child(fileName).put(file);
 
-                uploadTask.on('state_changed',
-                    (snapshot) => {
-                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                        progressFill.style.width = progress + '%';
-                        this.showUploadStatus(`در حال آپلود... ${Math.round(progress)}%`, '');
-                    },
-                    (error) => {
-                        console.error('Upload error:', error);
-                        progressBar.classList.remove('show');
-                        this.showUploadStatus('خطا در آپلود فایل: ' + error.message, 'error');
-                    },
-                    () => {
-                        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                            this.uploadedFileUrl = downloadURL;
+                    uploadTask.on('state_changed',
+                        (snapshot) => {
+                            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                            progressFill.style.width = progress + '%';
+                            this.showUploadStatus(`در حال آپلود... ${Math.round(progress)}%`, '');
+                            console.log('Upload progress:', progress + '%');
+                        },
+                        (error) => {
+                            console.error('Upload error:', error);
+                            this.isUploading = false;
+                            uploadBox.classList.remove('uploading');
                             progressBar.classList.remove('show');
-                            uploadBox.classList.add('uploaded');
-                            this.showUploadStatus('✓ فایل با موفقیت آپلود شد', 'success');
-                            console.log('File uploaded successfully:', downloadURL);
-                        });
-                    }
-                );
+                            
+                            let errorMsg = 'خطا در آپلود فایل';
+                            if (error.code === 'storage/unauthorized') {
+                                errorMsg = 'خطای دسترسی. لطفا دوباره لاگین کنید';
+                            } else if (error.code === 'storage/canceled') {
+                                errorMsg = 'آپلود لغو شد';
+                            } else if (error.code === 'storage/unknown') {
+                                errorMsg = 'خطای ناشناخته. اینترنت خود را بررسی کنید';
+                            }
+                            
+                            this.showUploadStatus(errorMsg + ': ' + error.message, 'error');
+                        },
+                        () => {
+                            uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                                this.uploadedFileUrl = downloadURL;
+                                this.isUploading = false;
+                                uploadBox.classList.remove('uploading');
+                                uploadBox.classList.add('uploaded');
+                                progressBar.classList.remove('show');
+                                this.showUploadStatus('✓ فایل با موفقیت آپلود شد', 'success');
+                                console.log('File uploaded successfully:', downloadURL);
+                            }).catch((error) => {
+                                console.error('Error getting download URL:', error);
+                                this.isUploading = false;
+                                uploadBox.classList.remove('uploading');
+                                this.showUploadStatus('خطا در دریافت لینک فایل', 'error');
+                            });
+                        }
+                    );
+                } catch (error) {
+                    console.error('Upload initialization error:', error);
+                    this.isUploading = false;
+                    uploadBox.classList.remove('uploading');
+                    progressBar.classList.remove('show');
+                    this.showUploadStatus('خطا در شروع آپلود: ' + error.message, 'error');
+                }
             },
 
             showUploadStatus: function(message, type) {
@@ -795,7 +859,9 @@
 
             submitOrder: async function() {
                 const fullname = document.getElementById('checkout-fullname').value.trim();
+                const mobile = document.getElementById('checkout-mobile').value.trim();
                 const postal = document.getElementById('checkout-postal').value.trim();
+                const tracking = document.getElementById('checkout-tracking').value.trim();
                 
                 if (!this.selectedAddressId) {
                     alert('لطفا آدرس را انتخاب کنید');
@@ -805,12 +871,21 @@
                     alert('لطفا نام و نام خانوادگی را وارد کنید');
                     return;
                 }
+                if (!mobile || mobile.length !== 11 || !mobile.startsWith('09')) {
+                    alert('شماره موبایل باید ۱۱ رقم و با ۰۹ شروع شود');
+                    return;
+                }
                 if (!postal || postal.length !== 10 || !/^\d+$/.test(postal)) {
                     alert('کد پستی باید ۱۰ رقم باشد');
                     return;
                 }
                 if (!this.uploadedFileUrl) {
                     alert('لطفا فیش واریزی را آپلود کنید');
+                    return;
+                }
+                
+                if (this.isUploading) {
+                    alert('لطفا صبر کنید تا آپلود فایل تکمیل شود');
                     return;
                 }
                 
@@ -825,15 +900,19 @@
                     
                     let message = `🛍️ *سفارش جدید*\n\n`;
                     message += `👤 *نام:* ${fullname}\n`;
+                    message += `📱 *موبایل:* ${mobile}\n`;
                     message += `📧 *ایمیل:* ${auth.currentUser.email}\n`;
-                    message += `📮 *کد پستی:* ${postal}\n\n`;
-                    message += `📍 *آدرس:* ${selectedAddr.title}\n${selectedAddr.full}\n\n`;
+                    message += `📮 *کد پستی:* ${postal}\n`;
+                    if (tracking) {
+                        message += `🔍 *شماره پیگیری:* ${tracking}\n`;
+                    }
+                    message += `\n📍 *آدرس:* ${selectedAddr.title}\n${selectedAddr.full}\n\n`;
                     message += `🛒 *محصولات:*\n`;
                     this.cart.forEach(item => {
                         message += `• ${item.name} × ${item.quantity} = ${this.formatPrice(item.price * item.quantity)} تومان\n`;
                     });
                     message += `\n💰 *مجموع:* ${this.formatPrice(total)} تومان\n\n`;
-                    message += `📷 [فیش واریزی](${this.uploadedFileUrl})`;
+                    message += `📷 [مشاهده فیش واریزی](${this.uploadedFileUrl})`;
                     
                     console.log('Sending to Telegram...');
                     
@@ -860,6 +939,14 @@
                     this.selectedAddressId = null;
                     this.saveLocalData();
                     this.updateCartBadge();
+                    
+                    document.getElementById('checkout-fullname').value = '';
+                    document.getElementById('checkout-mobile').value = '';
+                    document.getElementById('checkout-postal').value = '';
+                    document.getElementById('checkout-tracking').value = '';
+                    document.getElementById('receipt-preview').style.display = 'none';
+                    document.getElementById('upload-box').classList.remove('uploaded');
+                    this.showUploadStatus('', '');
                     
                     loader.style.display = 'none';
                     alert('✅ سفارش شما با موفقیت ثبت شد!\n\nبه زودی با شما تماس خواهیم گرفت.');

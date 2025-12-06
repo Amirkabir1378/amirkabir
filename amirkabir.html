@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>فروشگاه لوکس امیرکبیر</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+    <style>
+        /* --- تنظیمات تم طلایی (Luxury Gold Theme) --- */
+        :root {
+            --gold-primary: #d4af37;
+            --gold-light: #f1d570;
+            --gold-dark: #aa8c2c;
+            --bg-body: #121212;
+            --bg-card: #1e1e1e;
+            --text-main: #ffffff;
+            --text-sub: #b3b3b3;
+            --border: #333333;
+            --radius: 15px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Vazirmatn', sans-serif; outline: none; }
+        
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            padding-top: 80px;
+            overflow-x: hidden;
+        }
+
+        button { cursor: pointer; border: none; font-family: inherit; transition: 0.3s; }
+
+        /* --- Header --- */
+        header {
+            position: fixed; top: 0; width: 100%; height: 80px;
+            background: rgba(30, 30, 30, 0.95);
+            border-bottom: 1px solid var(--gold-dark);
+            z-index: 1000;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .header-inner {
+            width: 100%; max-width: 1400px; padding: 0 20px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .logo {
+            font-size: 28px; font-weight: 900;
+            color: var(--gold-primary);
+        }
+        .nav-icons { display: flex; gap: 15px; align-items: center; }
+        .icon-btn {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: var(--border); color: var(--gold-primary);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+        }
+        .badge {
+            position: absolute; top: -5px; right: -5px;
+            background: var(--gold-primary); color: #000;
+            font-size: 11px; width: 18px; height: 18px;
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+        }
+
+        /* --- Pages --- */
+        .page { display: none; max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .page.active { display: block; }
+
+        /* --- Login Page --- */
+        .login-box {
+            background: var(--bg-card); padding: 50px; border-radius: 20px;
+            text-align: center; max-width: 400px; margin: 80px auto;
+            border: 1px solid var(--gold-dark);
+        }
+        .google-btn {
+            width: 100%; background: #fff; color: #333;
+            padding: 15px; border-radius: 50px; font-weight: bold;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            margin-top: 30px; font-size: 15px;
+        }
+        
+        /* Error Box */
+        #error-msg {
+            color: #ff6b6b; background: rgba(255, 0, 0, 0.1);
+            padding: 10px; margin-top: 20px; border-radius: 8px;
+            display: none; font-size: 13px; text-align: right;
+        }
+
+        /* --- Home & Grid --- */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 30px; }
+        .card {
+            background: var(--bg-card); border-radius: var(--radius); padding: 20px;
+            border: 1px solid var(--border);
+        }
+        .card-img {
+            height: 200px; background: #000; border-radius: 10px; margin-bottom: 15px;
+            display: flex; align-items: center; justify-content: center; font-size: 60px; color: var(--gold-primary);
+        }
+        .add-btn {
+            width: 100%; padding: 12px; margin-top: 15px;
+            background: transparent; border: 1px solid var(--gold-primary); color: var(--gold-primary);
+            border-radius: 10px; font-weight: bold;
+        }
+        .add-btn:hover { background: var(--gold-primary); color: #000; }
+
+        /* Loader */
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 2000; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; color: var(--gold-primary);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loader">
+        <p style="font-size:20px;">در حال بررسی وضعیت...</p>
+    </div>
+
+    <header id="main-header" style="display:none;">
+        <div class="header-inner">
+            <div class="logo">AMIRKABIR</div>
+            <div class="nav-icons">
+                <div class="icon-btn" onclick="app.nav('cart')" style="position:relative;">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="badge" id="cart-badge">0</span>
+                </div>
+                <div class="icon-btn" onclick="auth.logout()" style="color:#ff4757;">
+                    <i class="fas fa-power-off"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div id="page-login" class="page">
+        <div class="login-box">
+            <h1 style="color:var(--gold-primary);">ورود اعضا</h1>
+            <p style="color:var(--text-sub);">لطفا برای دسترسی وارد شوید</p>
+            
+            <button class="google-btn" onclick="auth.login()">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
+                ورود با گوگل
+            </button>
+
+            <div id="error-msg"></div>
+        </div>
+    </div>
+
+    <div id="page-home" class="page">
+        <h2 style="color:var(--gold-primary); margin-bottom: 20px;">محصولات فروشگاه</h2>
+        <div class="grid" id="product-grid"></div>
+    </div>
+
+    <div id="page-cart" class="page">
+        <h2>سبد خرید</h2>
+        <div id="cart-items" style="margin-top:20px;"></div>
+    </div>
+
+    <script>
+        // --- 1. تنظیمات فایربیس ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyB06UC0JITqaQCU_1toK7M7CUCKusEWrOE",
+            authDomain: "amirkabir-3b897.firebaseapp.com",
+            projectId: "amirkabir-3b897",
+            storageBucket: "amirkabir-3b897.firebasestorage.app",
+            messagingSenderId: "902534322032",
+            appId: "1:902534322032:web:17fd8194b65777dfd821b5"
+        };
+
+        // --- 2. مدیریت احراز هویت (Auth) ---
+        const auth = {
+            init: function() {
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+
+                // تنظیم ماندگاری لاگین (مهم برای جلوگیری از لوپ)
+                firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+                    .then(() => {
+                        // شنونده وضعیت کاربر
+                        firebase.auth().onAuthStateChanged(user => {
+                            document.getElementById('loader').style.display = 'none';
+                            
+                            if (user) {
+                                console.log("User is logged in:", user.email);
+                                app.initUser(user);
+                            } else {
+                                console.log("User is logged out");
+                                app.showPage('login');
+                                document.getElementById('main-header').style.display = 'none';
+                            }
+                        });
+                    })
+                    .catch((error) => {
+                        alert("خطا در تنظیمات مرورگر: " + error.message);
+                    });
+            },
+
+            login: function() {
+                const errorBox = document.getElementById('error-msg');
+                errorBox.style.display = 'none';
+                errorBox.innerText = '';
+
+                const provider = new firebase.auth.GoogleAuthProvider();
+                
+                // استفاده از Popup برای لاگین
+                firebase.auth().signInWithPopup(provider)
+                    .then((result) => {
+                        // موفقیت‌آمیز - خودکار توسط onAuthStateChanged مدیریت می‌شود
+                        console.log("Login Success");
+                    })
+                    .catch((error) => {
+                        console.error("Login Error:", error);
+                        errorBox.style.display = 'block';
+                        // نمایش پیام خطای فارسی
+                        let faError = "خطا در اتصال به گوگل.";
+                        if (error.code === 'auth/network-request-failed') faError = "مشکل اینترنت یا فیلترشکن. لطفا VPN را چک کنید.";
+                        if (error.code === 'auth/popup-closed-by-user') faError = "پنجره ورود توسط شما بسته شد.";
+                        if (error.code === 'auth/unauthorized-domain') faError = "آدرس سایت در فایربیس ثبت نشده است! (Authorized Domains)";
+                        
+                        errorBox.innerText = faError + "\n(" + error.code + ")";
+                    });
+            },
+
+            logout: function() {
+                if(confirm("خروج از حساب؟")) {
+                    firebase.auth().signOut();
+                }
+            }
+        };
+
+        // --- 3. منطق برنامه (App) ---
+        const app = {
+            cart: [],
+            
+            initUser: function(user) {
+                document.getElementById('main-header').style.display = 'flex';
+                this.renderProducts();
+                this.showPage('home');
+            },
+
+            showPage: function(pageId) {
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                document.getElementById('page-' + pageId).classList.add('active');
+            },
+
+            nav: function(page) { this.showPage(page); },
+
+            renderProducts: function() {
+                const products = [
+                    { id: 1, name: "آیفون ۱۳ پرومکس", price: "۵۵,۰۰۰,۰۰۰", icon: "fa-mobile-alt" },
+                    { id: 2, name: "مک‌بوک پرو M2", price: "۸۵,۰۰۰,۰۰۰", icon: "fa-laptop" },
+                    { id: 3, name: "هدفون سونی", price: "۱۲,۰۰۰,۰۰۰", icon: "fa-headphones" },
+                    { id: 4, name: "ساعت هوشمند", price: "۱۵,۰۰۰,۰۰۰", icon: "fa-clock" }
+                ];
+
+                const container = document.getElementById('product-grid');
+                container.innerHTML = products.map(p => `
+                    <div class="card">
+                        <div class="card-img"><i class="fas ${p.icon}"></i></div>
+                        <h3>${p.name}</h3>
+                        <div style="color:var(--gold-light); margin:10px 0;">${p.price} تومان</div>
+                        <button class="add-btn" onclick="alert('به سبد اضافه شد')">افزودن به سبد</button>
+                    </div>
+                `).join('');
+            }
+        };
+
+        // شروع
+        window.onload = () => auth.init();
+
+    </script>
+</body>
+</html>

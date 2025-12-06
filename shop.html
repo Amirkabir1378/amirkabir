@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>فروشگاه لوکس امیرکبیر</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+    <style>
+        /* همان استایل‌های لوکس قبلی */
+        :root { --gold: #d4af37; --bg: #121212; --card: #1e1e1e; --text: #fff; }
+        body { background: var(--bg); color: var(--text); font-family: 'Vazirmatn'; padding: 80px 0; margin: 0; }
+        header { position: fixed; top: 0; width: 100%; height: 70px; background: rgba(30,30,30,0.95); border-bottom: 1px solid #aa8c2c; display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .header-in { width: 100%; max-width: 1200px; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
+        .btn { background: #333; color: var(--gold); border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 18px; cursor: pointer; margin-left: 10px; position: relative; }
+        .badge { position: absolute; top: -5px; right: -5px; background: var(--gold); color: #000; font-size: 10px; width: 16px; height: 16px; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
+        
+        .page { display: none; max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .page.active { display: block; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .card { background: var(--card); padding: 15px; border-radius: 15px; border: 1px solid #333; }
+        .add-btn { width: 100%; padding: 10px; margin-top: 10px; background: transparent; border: 1px solid var(--gold); color: var(--gold); border-radius: 10px; cursor: pointer; }
+        
+        .panel { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid #333; }
+        input, textarea { background: #000; border: 1px solid #333; color: #fff; width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+        .save-btn { background: var(--gold); color: #000; width: 100%; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        
+        #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; display: flex; justify-content: center; align-items: center; color: var(--gold); }
+    </style>
+</head>
+<body>
+
+    <div id="loader">در حال اعتبارسنجی کاربر...</div>
+
+    <header>
+        <div class="header-in">
+            <h2 style="color:var(--gold); margin:0;">AMIRKABIR</h2>
+            <div>
+                <button class="btn" onclick="app.nav('cart')"><i class="fas fa-shopping-bag"></i><span class="badge" id="c-count">0</span></button>
+                <button class="btn" onclick="app.nav('profile')"><i class="fas fa-user"></i></button>
+                <button class="btn" onclick="auth.out()" style="color:#ff4757;"><i class="fas fa-power-off"></i></button>
+            </div>
+        </div>
+    </header>
+
+    <div id="p-home" class="page active">
+        <h3 style="color:var(--gold)">محصولات</h3>
+        <div class="grid" id="grid"></div>
+    </div>
+
+    <div id="p-cart" class="page">
+        <h3>سبد خرید</h3>
+        <div class="panel">
+            <div id="cart-list"></div>
+            <div id="checkout-area" style="display:none; margin-top:20px; border-top:1px solid #333; padding-top:10px;">
+                <p>جمع کل: <span id="total" style="color:var(--gold)">0</span></p>
+                <button class="save-btn" onclick="app.checkout()">نهایی کردن خرید</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="p-profile" class="page">
+        <div class="panel">
+            <div style="display:flex; align-items:center; gap:15px; margin-bottom:20px;">
+                <img id="u-img" style="width:60px; height:60px; border-radius:50%; border:2px solid var(--gold);">
+                <div><h4 id="u-name" style="margin:0;"></h4><small id="u-email" style="color:#888"></small></div>
+            </div>
+            
+            <hr style="border-color:#333">
+            
+            <h4>آدرس‌های من</h4>
+            <div id="addr-list" style="margin-bottom:15px;"></div>
+            <div style="background:#000; padding:10px; border-radius:10px;">
+                <input id="in-city" placeholder="شهر">
+                <textarea id="in-addr" placeholder="آدرس دقیق"></textarea>
+                <button class="save-btn" onclick="app.addAddr()">ثبت آدرس جدید</button>
+            </div>
+
+            <h4 style="margin-top:20px;">سفارش‌های من</h4>
+            <div id="order-list"></div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyB06UC0JITqaQCU_1toK7M7CUCKusEWrOE",
+            authDomain: "amirkabir-3b897.firebaseapp.com",
+            projectId: "amirkabir-3b897",
+            storageBucket: "amirkabir-3b897.firebasestorage.app",
+            messagingSenderId: "902534322032",
+            appId: "1:902534322032:web:17fd8194b65777dfd821b5"
+        };
+
+        const auth = {
+            init: function() {
+                if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                firebase.auth().onAuthStateChanged(user => {
+                    if (user) {
+                        document.getElementById('loader').style.display = 'none';
+                        app.start(user);
+                    } else {
+                        // اگر کاربر لاگین نبود، برگرد به صفحه ورود
+                        window.location.href = "index.html";
+                    }
+                });
+            },
+            out: function() {
+                if(confirm("خروج؟")) firebase.auth().signOut().then(() => window.location.href = "index.html");
+            }
+        };
+
+        const app = {
+            data: { cart:[], addr:[], orders:[] },
+            
+            start: function(user) {
+                document.getElementById('u-name').innerText = user.displayName;
+                document.getElementById('u-email').innerText = user.email;
+                document.getElementById('u-img').src = user.photoURL;
+                
+                // بازیابی اطلاعات از حافظه لوکال
+                const saved = localStorage.getItem('user_data');
+                if(saved) this.data = JSON.parse(saved);
+                
+                this.renderProds();
+                this.updateUI();
+            },
+
+            save: function() {
+                localStorage.setItem('user_data', JSON.stringify(this.data));
+                this.updateUI();
+            },
+
+            nav: function(id) {
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                document.getElementById(id === 'home' ? 'p-home' : id === 'cart' ? 'p-cart' : 'p-profile').classList.add('active');
+            },
+
+            renderProds: function() {
+                const ps = [
+                    {n:"آیفون ۱۳ پرومکس", p:55000000, i:"fa-mobile"},
+                    {n:"مک‌بوک پرو", p:85000000, i:"fa-laptop"},
+                    {n:"پلی استیشن ۵", p:26000000, i:"fa-gamepad"},
+                    {n:"هدفون سونی", p:14000000, i:"fa-headphones"}
+                ];
+                document.getElementById('grid').innerHTML = ps.map(p => `
+                    <div class="card">
+                        <div style="font-size:40px; text-align:center; color:var(--gold)"><i class="fas ${p.i}"></i></div>
+                        <h3>${p.n}</h3>
+                        <p style="color:#aaa">${p.p.toLocaleString()}</p>
+                        <button class="add-btn" onclick="app.addCart('${p.n}', ${p.p})">خرید</button>
+                    </div>
+                `).join('');
+            },
+
+            addCart: function(n, p) { this.data.cart.push({n, p}); this.save(); alert(n+" اضافه شد"); },
+            
+            updateUI: function() {
+                document.getElementById('c-count').innerText = this.data.cart.length;
+                
+                // سبد خرید
+                const cl = document.getElementById('cart-list');
+                if(this.data.cart.length === 0) {
+                    cl.innerHTML = "<p>سبد خالی است</p>";
+                    document.getElementById('checkout-area').style.display = 'none';
+                } else {
+                    let sum = 0;
+                    cl.innerHTML = this.data.cart.map((c,i) => {
+                        sum += c.p;
+                        return `<div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #333"><span>${c.n}</span><i class="fas fa-trash" style="color:red; cursor:pointer" onclick="app.delCart(${i})"></i></div>`;
+                    }).join('');
+                    document.getElementById('total').innerText = sum.toLocaleString();
+                    document.getElementById('checkout-area').style.display = 'block';
+                }
+
+                // آدرس‌ها
+                document.getElementById('addr-list').innerHTML = this.data.addr.map((a,i) => `
+                    <div style="background:#000; padding:10px; border-radius:5px; margin-bottom:5px; display:flex; justify-content:space-between;">
+                        <span>${a.c} - ${a.a}</span>
+                        <i class="fas fa-trash" onclick="app.delAddr(${i})" style="color:red; cursor:pointer"></i>
+                    </div>
+                `).join('');
+
+                // سفارش‌ها
+                document.getElementById('order-list').innerHTML = this.data.orders.map(o => `
+                    <div style="border:1px solid #333; padding:10px; margin-bottom:5px; border-radius:5px;">
+                        <span style="color:var(--gold)">${o.id}</span> - ${o.items} کالا
+                    </div>
+                `).join('');
+            },
+
+            delCart: function(i) { this.data.cart.splice(i, 1); this.save(); },
+            
+            addAddr: function() {
+                const c = document.getElementById('in-city').value;
+                const a = document.getElementById('in-addr').value;
+                if(c && a) {
+                    this.data.addr.push({c, a});
+                    document.getElementById('in-city').value = "";
+                    document.getElementById('in-addr').value = "";
+                    this.save();
+                } else alert("اطلاعات را کامل وارد کنید");
+            },
+            delAddr: function(i) { if(confirm("حذف؟")) { this.data.addr.splice(i,1); this.save(); } },
+
+            checkout: function() {
+                if(this.data.addr.length === 0) return alert("اول آدرس ثبت کنید!");
+                if(confirm("پرداخت؟")) {
+                    this.data.orders.push({id: "ORD-"+Math.floor(Math.random()*9000), items: this.data.cart.length});
+                    this.data.cart = [];
+                    this.save();
+                    alert("خرید انجام شد!");
+                    this.nav('profile');
+                }
+            }
+        };
+
+        window.onload = auth.init;
+    </script>
+</body>
+</html>

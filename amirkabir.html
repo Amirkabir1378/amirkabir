@@ -7,11 +7,11 @@
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
     <style>
-        /* --- تم لوکس طلایی (Luxury Gold) --- */
+        /* --- تم لوکس طلایی --- */
         :root {
             --gold-primary: #d4af37;
             --gold-light: #f1d570;
@@ -31,7 +31,7 @@
             color: var(--text-main);
             padding-top: 80px;
             overflow-x: hidden;
-            padding-bottom: 80px; /* فضای خالی برای موبایل */
+            padding-bottom: 80px;
         }
 
         button { cursor: pointer; border: none; font-family: inherit; transition: 0.3s; }
@@ -97,6 +97,7 @@
             display: flex; align-items: center; justify-content: center; gap: 10px;
             margin-top: 30px; font-size: 14px;
         }
+        .google-btn:active { transform: scale(0.95); background: #eee; }
         
         /* --- Products --- */
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 25px; }
@@ -127,7 +128,7 @@
         }
         .save-btn { background: var(--gold-primary); color: black; padding: 10px; border-radius: 8px; font-weight: bold; width: 100%; }
 
-        /* --- Toast Notification --- */
+        /* --- Toast --- */
         .toast {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px);
             background: var(--bg-card); color: white; padding: 12px 25px; border-radius: 50px;
@@ -149,7 +150,7 @@
 
     <div id="loader">
         <i class="fas fa-circle-notch fa-spin" style="font-size: 40px; margin-bottom: 15px;"></i>
-        <p>در حال اتصال به فروشگاه...</p>
+        <p>در حال بارگذاری...</p>
     </div>
 
     <header id="main-header" style="display:none;">
@@ -174,9 +175,10 @@
         <div class="login-box">
             <h1 style="color:var(--gold-primary); margin-bottom:10px;">عضویت ویژه</h1>
             <p style="color:var(--text-sub); font-size:14px;">برای دسترسی به امکانات لطفا وارد شوید</p>
-            <button class="google-btn" onclick="auth.login()">
+            
+            <button id="btn-google" class="google-btn" onclick="auth.login()">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
-                ورود امن با گوگل
+                <span id="btn-text">ورود امن با گوگل</span>
             </button>
             <div id="error-msg" style="color:#ff6b6b; margin-top:20px; font-size:12px;"></div>
         </div>
@@ -243,7 +245,7 @@
     </div>
 
     <script>
-        // --- تنظیمات فایربیس ---
+        // --- تنظیمات فایربیس (ثابت) ---
         const firebaseConfig = {
             apiKey: "AIzaSyB06UC0JITqaQCU_1toK7M7CUCKusEWrOE",
             authDomain: "amirkabir-3b897.firebaseapp.com",
@@ -257,11 +259,13 @@
         const auth = {
             init: function() {
                 if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                
                 firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => {
                     firebase.auth().onAuthStateChanged(user => {
                         document.getElementById('loader').style.display = 'none';
-                        if (user) app.initUser(user);
-                        else {
+                        if (user) {
+                            app.initUser(user);
+                        } else {
                             app.showPage('login');
                             document.getElementById('main-header').style.display = 'none';
                         }
@@ -269,11 +273,28 @@
                 });
             },
             login: function() {
-                // ریدایرکت برای موبایل ضروری است
-                firebase.auth().signInWithRedirect(new firebase.auth.GoogleAuthProvider());
+                // تغییر ظاهری دکمه برای اطمینان از کلیک
+                const btnText = document.getElementById('btn-text');
+                const btn = document.getElementById('btn-google');
+                btnText.innerText = "در حال اتصال به گوگل...";
+                btn.style.opacity = "0.7";
+
+                // انجام لاگین با خطا یابی
+                const provider = new firebase.auth.GoogleAuthProvider();
+                firebase.auth().signInWithRedirect(provider)
+                    .catch(error => {
+                        // اگر خطایی رخ دهد (مثل قطع اینترنت)
+                        alert("خطا در اتصال: " + error.message);
+                        btnText.innerText = "ورود امن با گوگل";
+                        btn.style.opacity = "1";
+                    });
             },
             logout: function() {
-                if(confirm("خروج از حساب؟")) firebase.auth().signOut();
+                if(confirm("خروج از حساب؟")) {
+                    firebase.auth().signOut().then(() => {
+                         window.location.reload();
+                    });
+                }
             }
         };
 
@@ -360,7 +381,7 @@
                 document.getElementById('total-price').innerText = total.toLocaleString() + ' تومان';
             },
 
-            // --- Address Logic (NEW) ---
+            // --- Address Logic ---
             addAddress: function() {
                 const title = document.getElementById('addr-title').value;
                 const city = document.getElementById('addr-city').value;
@@ -373,7 +394,6 @@
                 this.renderAddresses();
                 this.showToast("آدرس با موفقیت ثبت شد");
                 
-                // پاک کردن فرم
                 document.getElementById('addr-title').value = '';
                 document.getElementById('addr-city').value = '';
                 document.getElementById('addr-full').value = '';

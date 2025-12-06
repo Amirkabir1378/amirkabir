@@ -9,9 +9,9 @@
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
     <style>
-        /* --- تنظیمات تم طلایی (Luxury Gold Theme) --- */
         :root {
             --gold-primary: #d4af37;
             --gold-light: #f1d570;
@@ -35,7 +35,6 @@
 
         button { cursor: pointer; border: none; font-family: inherit; transition: 0.3s; }
 
-        /* --- Header --- */
         header {
             position: fixed; top: 0; width: 100%; height: 80px;
             background: rgba(30, 30, 30, 0.95);
@@ -50,14 +49,16 @@
         .logo {
             font-size: 28px; font-weight: 900;
             color: var(--gold-primary);
+            cursor: pointer;
         }
         .nav-icons { display: flex; gap: 15px; align-items: center; }
         .icon-btn {
             width: 40px; height: 40px; border-radius: 50%;
             background: var(--border); color: var(--gold-primary);
             display: flex; align-items: center; justify-content: center;
-            font-size: 18px;
+            font-size: 18px; position: relative;
         }
+        .icon-btn:hover { background: var(--gold-dark); }
         .badge {
             position: absolute; top: -5px; right: -5px;
             background: var(--gold-primary); color: #000;
@@ -65,11 +66,9 @@
             border-radius: 50%; display: flex; justify-content: center; align-items: center;
         }
 
-        /* --- Pages --- */
         .page { display: none; max-width: 1400px; margin: 0 auto; padding: 20px; }
         .page.active { display: block; }
 
-        /* --- Login Page --- */
         .login-box {
             background: var(--bg-card); padding: 50px; border-radius: 20px;
             text-align: center; max-width: 400px; margin: 80px auto;
@@ -82,14 +81,12 @@
             margin-top: 30px; font-size: 15px;
         }
         
-        /* Error Box */
         #error-msg {
             color: #ff6b6b; background: rgba(255, 0, 0, 0.1);
             padding: 10px; margin-top: 20px; border-radius: 8px;
             display: none; font-size: 13px; text-align: right;
         }
 
-        /* --- Home & Grid --- */
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 30px; }
         .card {
             background: var(--bg-card); border-radius: var(--radius); padding: 20px;
@@ -106,24 +103,154 @@
         }
         .add-btn:hover { background: var(--gold-primary); color: #000; }
 
-        /* Loader */
+        .back-btn {
+            background: var(--border); color: var(--text-main);
+            padding: 10px 20px; border-radius: 8px; margin-bottom: 20px;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .back-btn:hover { background: var(--gold-dark); }
+
+        .cart-item {
+            background: var(--bg-card); padding: 20px; border-radius: 10px;
+            margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;
+            border: 1px solid var(--border);
+        }
+        .cart-item-info { flex: 1; }
+        .cart-item-actions {
+            display: flex; gap: 10px; align-items: center;
+        }
+        .qty-btn {
+            width: 30px; height: 30px; border-radius: 5px;
+            background: var(--gold-dark); color: #fff;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .remove-btn {
+            background: #ff4757; color: #fff;
+            padding: 8px 15px; border-radius: 5px;
+        }
+        
+        .checkout-btn {
+            width: 100%; padding: 15px; margin-top: 20px;
+            background: var(--gold-primary); color: #000;
+            border-radius: 10px; font-weight: bold; font-size: 16px;
+        }
+        .checkout-btn:disabled {
+            background: var(--border); color: var(--text-sub);
+            cursor: not-allowed;
+        }
+
+        .profile-header {
+            background: var(--bg-card); padding: 30px; border-radius: 15px;
+            border: 1px solid var(--gold-dark); margin-bottom: 30px;
+            display: flex; align-items: center; gap: 20px;
+        }
+        .profile-avatar {
+            width: 80px; height: 80px; border-radius: 50%;
+            border: 3px solid var(--gold-primary);
+        }
+        .profile-info h2 { color: var(--gold-primary); margin-bottom: 5px; }
+        .profile-info p { color: var(--text-sub); }
+
+        .section-box {
+            background: var(--bg-card); padding: 25px; border-radius: 15px;
+            border: 1px solid var(--border); margin-bottom: 20px;
+        }
+        .section-title {
+            color: var(--gold-primary); font-size: 18px; font-weight: bold;
+            margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .address-item {
+            background: var(--bg-body); padding: 15px; border-radius: 8px;
+            margin-bottom: 10px; border: 2px solid transparent;
+            cursor: pointer; transition: 0.3s;
+        }
+        .address-item:hover { border-color: var(--gold-dark); }
+        .address-item.selected { border-color: var(--gold-primary); background: rgba(212, 175, 55, 0.1); }
+        .address-item h4 { color: var(--gold-light); margin-bottom: 5px; }
+        .address-item p { color: var(--text-sub); font-size: 14px; }
+        .address-actions {
+            margin-top: 10px; display: flex; gap: 10px;
+        }
+        .edit-addr-btn, .del-addr-btn {
+            padding: 5px 12px; border-radius: 5px; font-size: 13px;
+        }
+        .edit-addr-btn { background: var(--gold-dark); color: #fff; }
+        .del-addr-btn { background: #ff4757; color: #fff; }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block; margin-bottom: 5px; color: var(--text-sub);
+        }
+        .form-group input, .form-group textarea {
+            width: 100%; padding: 12px; border-radius: 8px;
+            background: var(--bg-body); border: 1px solid var(--border);
+            color: var(--text-main);
+        }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+
+        .btn-primary {
+            background: var(--gold-primary); color: #000;
+            padding: 12px 25px; border-radius: 8px; font-weight: bold;
+        }
+        .btn-secondary {
+            background: var(--border); color: var(--text-main);
+            padding: 12px 25px; border-radius: 8px;
+        }
+
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 2000;
+            align-items: center; justify-content: center;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: var(--bg-card); padding: 30px; border-radius: 15px;
+            max-width: 500px; width: 90%; border: 1px solid var(--gold-dark);
+        }
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-header h3 { color: var(--gold-primary); }
+        .close-modal { background: #ff4757; color: #fff; padding: 5px 10px; border-radius: 5px; }
+
+        .upload-box {
+            border: 2px dashed var(--border); padding: 30px; border-radius: 10px;
+            text-align: center; cursor: pointer; transition: 0.3s;
+        }
+        .upload-box:hover { border-color: var(--gold-dark); }
+        .upload-preview {
+            max-width: 100%; max-height: 300px; margin-top: 15px; border-radius: 8px;
+        }
+
         #loader {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; z-index: 2000; display: flex; flex-direction: column;
             justify-content: center; align-items: center; color: var(--gold-primary);
         }
+
+        .empty-state {
+            text-align: center; padding: 50px; color: var(--text-sub);
+        }
+        .empty-state i { font-size: 60px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
     <div id="loader">
-        <p style="font-size:20px;">در حال بررسی وضعیت...</p>
+        <p style="font-size:20px;">[translate:در حال بررسی وضعیت...]</p>
     </div>
 
     <header id="main-header" style="display:none;">
         <div class="header-inner">
-            <div class="logo">AMIRKABIR</div>
+            <div class="logo" onclick="app.nav('home')">AMIRKABIR</div>
             <div class="nav-icons">
+                <div class="icon-btn" onclick="app.nav('profile')">
+                    <i class="fas fa-user"></i>
+                </div>
                 <div class="icon-btn" onclick="app.nav('cart')" style="position:relative;">
                     <i class="fas fa-shopping-bag"></i>
                     <span class="badge" id="cart-badge">0</span>
@@ -135,32 +262,129 @@
         </div>
     </header>
 
+    <!-- صفحه ورود -->
     <div id="page-login" class="page">
         <div class="login-box">
-            <h1 style="color:var(--gold-primary);">ورود اعضا</h1>
-            <p style="color:var(--text-sub);">لطفا برای دسترسی وارد شوید</p>
+            <h1 style="color:var(--gold-primary);">[translate:ورود اعضا]</h1>
+            <p style="color:var(--text-sub);">[translate:لطفا برای دسترسی وارد شوید]</p>
             
             <button class="google-btn" onclick="auth.login()">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
-                ورود با گوگل
+                [translate:ورود با گوگل]
             </button>
 
             <div id="error-msg"></div>
         </div>
     </div>
 
+    <!-- صفحه اصلی (محصولات) -->
     <div id="page-home" class="page">
-        <h2 style="color:var(--gold-primary); margin-bottom: 20px;">محصولات فروشگاه</h2>
+        <h2 style="color:var(--gold-primary); margin-bottom: 20px;">[translate:محصولات فروشگاه]</h2>
         <div class="grid" id="product-grid"></div>
     </div>
 
+    <!-- صفحه پروفایل -->
+    <div id="page-profile" class="page">
+        <button class="back-btn" onclick="app.nav('home')">
+            <i class="fas fa-arrow-right"></i> [translate:بازگشت]
+        </button>
+
+        <div class="profile-header">
+            <img id="profile-avatar" class="profile-avatar" src="" alt="avatar">
+            <div class="profile-info">
+                <h2 id="profile-name">[translate:کاربر]</h2>
+                <p id="profile-email">user@example.com</p>
+            </div>
+        </div>
+
+        <div class="section-box">
+            <div class="section-title">
+                <span>[translate:آدرس‌های من]</span>
+                <button class="btn-primary" onclick="app.openAddressModal()">[translate:افزودن آدرس]</button>
+            </div>
+            <div id="address-list"></div>
+        </div>
+    </div>
+
+    <!-- صفحه سبد خرید -->
     <div id="page-cart" class="page">
-        <h2>سبد خرید</h2>
-        <div id="cart-items" style="margin-top:20px;"></div>
+        <button class="back-btn" onclick="app.nav('home')">
+            <i class="fas fa-arrow-right"></i> [translate:بازگشت]
+        </button>
+
+        <h2 style="color:var(--gold-primary); margin-bottom:20px;">[translate:سبد خرید]</h2>
+        <div id="cart-items"></div>
+        <div id="cart-total" style="text-align:left; font-size:20px; margin-top:20px; color:var(--gold-light);"></div>
+        <button class="checkout-btn" id="checkout-btn" onclick="app.proceedCheckout()" disabled>
+            [translate:ادامه خرید]
+        </button>
+    </div>
+
+    <!-- صفحه تکمیل خرید -->
+    <div id="page-checkout" class="page">
+        <button class="back-btn" onclick="app.nav('cart')">
+            <i class="fas fa-arrow-right"></i> [translate:بازگشت به سبد]
+        </button>
+
+        <h2 style="color:var(--gold-primary); margin-bottom:20px;">[translate:تکمیل خرید]</h2>
+
+        <div class="section-box">
+            <div class="section-title">[translate:انتخاب آدرس]</div>
+            <div id="checkout-address-list"></div>
+        </div>
+
+        <div class="section-box">
+            <div class="section-title">[translate:اطلاعات تکمیلی]</div>
+            <div class="form-group">
+                <label>[translate:نام و نام خانوادگی]</label>
+                <input type="text" id="checkout-fullname" placeholder="[translate:محمد احمدی]">
+            </div>
+            <div class="form-group">
+                <label>[translate:کد پستی (۱۰ رقم)]</label>
+                <input type="text" id="checkout-postal" placeholder="1234567890" maxlength="10">
+            </div>
+        </div>
+
+        <div class="section-box">
+            <div class="section-title">[translate:آپلود فیش واریزی]</div>
+            <div class="upload-box" onclick="document.getElementById('receipt-file').click()">
+                <i class="fas fa-cloud-upload-alt" style="font-size:40px; color:var(--gold-primary);"></i>
+                <p style="margin-top:10px;">[translate:کلیک کنید و فیش خود را انتخاب کنید]</p>
+                <input type="file" id="receipt-file" accept="image/*" style="display:none;" onchange="app.previewReceipt(event)">
+            </div>
+            <img id="receipt-preview" class="upload-preview" style="display:none;">
+        </div>
+
+        <button class="checkout-btn" onclick="app.submitOrder()">[translate:ثبت نهایی سفارش]</button>
+    </div>
+
+    <!-- مودال افزودن/ویرایش آدرس -->
+    <div id="address-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="address-modal-title">[translate:افزودن آدرس]</h3>
+                <button class="close-modal" onclick="app.closeAddressModal()">×</button>
+            </div>
+            <div class="form-group">
+                <label>[translate:عنوان آدرس]</label>
+                <input type="text" id="addr-title" placeholder="[translate:خانه، محل کار، ...]">
+            </div>
+            <div class="form-group">
+                <label>[translate:آدرس کامل]</label>
+                <textarea id="addr-full" placeholder="[translate:استان، شهر، خیابان، پلاک، واحد]"></textarea>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-primary" onclick="app.saveAddress()">[translate:ذخیره]</button>
+                <button class="btn-secondary" onclick="app.closeAddressModal()">[translate:انصراف]</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        // --- 1. تنظیمات فایربیس ---
+        // --- تنظیمات ---
+        const TELEGRAM_BOT_TOKEN = '***YOUR_BOT_TOKEN***';
+        const TELEGRAM_CHAT_ID = '***YOUR_CHAT_ID***';
+
         const firebaseConfig = {
             apiKey: "AIzaSyB06UC0JITqaQCU_1toK7M7CUCKusEWrOE",
             authDomain: "amirkabir-3b897.firebaseapp.com",
@@ -170,58 +394,50 @@
             appId: "1:902534322032:web:17fd8194b65777dfd821b5"
         };
 
-        // --- 2. مدیریت احراز هویت (Auth) ---
+        // --- احراز هویت ---
         const auth = {
+            currentUser: null,
+
             init: function() {
                 if (!firebase.apps.length) {
                     firebase.initializeApp(firebaseConfig);
                 }
 
-                // تنظیم ماندگاری لاگین (مهم برای جلوگیری از لوپ)
                 firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
                     .then(() => {
-                        // شنونده وضعیت کاربر
                         firebase.auth().onAuthStateChanged(user => {
                             document.getElementById('loader').style.display = 'none';
                             
                             if (user) {
-                                console.log("User is logged in:", user.email);
+                                this.currentUser = user;
                                 app.initUser(user);
                             } else {
-                                console.log("User is logged out");
+                                this.currentUser = null;
                                 app.showPage('login');
                                 document.getElementById('main-header').style.display = 'none';
                             }
                         });
                     })
                     .catch((error) => {
-                        alert("خطا در تنظیمات مرورگر: " + error.message);
+                        alert("خطا: " + error.message);
                     });
             },
 
             login: function() {
                 const errorBox = document.getElementById('error-msg');
                 errorBox.style.display = 'none';
-                errorBox.innerText = '';
 
                 const provider = new firebase.auth.GoogleAuthProvider();
                 
-                // استفاده از Popup برای لاگین
                 firebase.auth().signInWithPopup(provider)
-                    .then((result) => {
-                        // موفقیت‌آمیز - خودکار توسط onAuthStateChanged مدیریت می‌شود
-                        console.log("Login Success");
-                    })
                     .catch((error) => {
-                        console.error("Login Error:", error);
                         errorBox.style.display = 'block';
-                        // نمایش پیام خطای فارسی
-                        let faError = "خطا در اتصال به گوگل.";
-                        if (error.code === 'auth/network-request-failed') faError = "مشکل اینترنت یا فیلترشکن. لطفا VPN را چک کنید.";
-                        if (error.code === 'auth/popup-closed-by-user') faError = "پنجره ورود توسط شما بسته شد.";
-                        if (error.code === 'auth/unauthorized-domain') faError = "آدرس سایت در فایربیس ثبت نشده است! (Authorized Domains)";
+                        let faError = "خطا در اتصال.";
+                        if (error.code === 'auth/network-request-failed') faError = "مشکل اینترنت یا فیلترشکن.";
+                        if (error.code === 'auth/popup-closed-by-user') faError = "پنجره ورود بسته شد.";
+                        if (error.code === 'auth/unauthorized-domain') faError = "دامنه مجاز نیست.";
                         
-                        errorBox.innerText = faError + "\n(" + error.code + ")";
+                        errorBox.innerText = faError;
                     });
             },
 
@@ -232,46 +448,368 @@
             }
         };
 
-        // --- 3. منطق برنامه (App) ---
+        // --- برنامه اصلی ---
         const app = {
             cart: [],
+            addresses: [],
+            selectedAddressId: null,
+            editingAddressId: null,
+
+            products: [
+                { id: 1, name: "آیفون ۱۳ پرومکس", price: 55000000, icon: "fa-mobile-alt" },
+                { id: 2, name: "مک‌بوک پرو M2", price: 85000000, icon: "fa-laptop" },
+                { id: 3, name: "هدفون سونی", price: 12000000, icon: "fa-headphones" },
+                { id: 4, name: "ساعت هوشمند", price: 15000000, icon: "fa-clock" }
+            ],
             
             initUser: function(user) {
                 document.getElementById('main-header').style.display = 'flex';
+                
+                // بارگذاری اطلاعات پروفایل
+                document.getElementById('profile-avatar').src = user.photoURL || 'https://via.placeholder.com/80';
+                document.getElementById('profile-name').innerText = user.displayName || 'کاربر';
+                document.getElementById('profile-email').innerText = user.email;
+
+                // بارگذاری داده‌های محلی
+                this.loadLocalData();
                 this.renderProducts();
                 this.showPage('home');
+            },
+
+            loadLocalData: function() {
+                const savedCart = localStorage.getItem('cart');
+                const savedAddresses = localStorage.getItem('addresses');
+                
+                if (savedCart) this.cart = JSON.parse(savedCart);
+                if (savedAddresses) this.addresses = JSON.parse(savedAddresses);
+                
+                this.updateCartBadge();
+            },
+
+            saveLocalData: function() {
+                localStorage.setItem('cart', JSON.stringify(this.cart));
+                localStorage.setItem('addresses', JSON.stringify(this.addresses));
             },
 
             showPage: function(pageId) {
                 document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
                 document.getElementById('page-' + pageId).classList.add('active');
+                
+                if (pageId === 'cart') this.renderCart();
+                if (pageId === 'profile') this.renderAddresses();
+                if (pageId === 'checkout') this.renderCheckout();
             },
 
             nav: function(page) { this.showPage(page); },
 
             renderProducts: function() {
-                const products = [
-                    { id: 1, name: "آیفون ۱۳ پرومکس", price: "۵۵,۰۰۰,۰۰۰", icon: "fa-mobile-alt" },
-                    { id: 2, name: "مک‌بوک پرو M2", price: "۸۵,۰۰۰,۰۰۰", icon: "fa-laptop" },
-                    { id: 3, name: "هدفون سونی", price: "۱۲,۰۰۰,۰۰۰", icon: "fa-headphones" },
-                    { id: 4, name: "ساعت هوشمند", price: "۱۵,۰۰۰,۰۰۰", icon: "fa-clock" }
-                ];
-
                 const container = document.getElementById('product-grid');
-                container.innerHTML = products.map(p => `
+                container.innerHTML = this.products.map(p => `
                     <div class="card">
                         <div class="card-img"><i class="fas ${p.icon}"></i></div>
                         <h3>${p.name}</h3>
-                        <div style="color:var(--gold-light); margin:10px 0;">${p.price} تومان</div>
-                        <button class="add-btn" onclick="alert('به سبد اضافه شد')">افزودن به سبد</button>
+                        <div style="color:var(--gold-light); margin:10px 0;">${this.formatPrice(p.price)} تومان</div>
+                        <button class="add-btn" onclick="app.addToCart(${p.id})">افزودن به سبد</button>
                     </div>
                 `).join('');
+            },
+
+            addToCart: function(productId) {
+                const product = this.products.find(p => p.id === productId);
+                const cartItem = this.cart.find(item => item.id === productId);
+                
+                if (cartItem) {
+                    cartItem.quantity++;
+                } else {
+                    this.cart.push({ ...product, quantity: 1 });
+                }
+                
+                this.saveLocalData();
+                this.updateCartBadge();
+                this.showNotification('محصول به سبد اضافه شد');
+            },
+
+            updateCartBadge: function() {
+                const total = this.cart.reduce((sum, item) => sum + item.quantity, 0);
+                document.getElementById('cart-badge').innerText = total;
+            },
+
+            renderCart: function() {
+                const container = document.getElementById('cart-items');
+                
+                if (this.cart.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-shopping-cart"></i>
+                            <p>سبد خرید شما خالی است</p>
+                        </div>
+                    `;
+                    document.getElementById('cart-total').innerHTML = '';
+                    document.getElementById('checkout-btn').disabled = true;
+                    return;
+                }
+                
+                container.innerHTML = this.cart.map(item => `
+                    <div class="cart-item">
+                        <div class="cart-item-info">
+                            <h3>${item.name}</h3>
+                            <p style="color:var(--gold-light); margin-top:5px;">
+                                ${this.formatPrice(item.price)} × ${item.quantity} = ${this.formatPrice(item.price * item.quantity)} تومان
+                            </p>
+                        </div>
+                        <div class="cart-item-actions">
+                            <button class="qty-btn" onclick="app.changeQuantity(${item.id}, -1)">-</button>
+                            <span style="padding:0 10px;">${item.quantity}</span>
+                            <button class="qty-btn" onclick="app.changeQuantity(${item.id}, 1)">+</button>
+                            <button class="remove-btn" onclick="app.removeFromCart(${item.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                
+                const total = this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                document.getElementById('cart-total').innerHTML = `جمع کل: <strong style="color:var(--gold-primary)">${this.formatPrice(total)} تومان</strong>`;
+                document.getElementById('checkout-btn').disabled = false;
+            },
+
+            changeQuantity: function(productId, delta) {
+                const item = this.cart.find(i => i.id === productId);
+                if (item) {
+                    item.quantity += delta;
+                    if (item.quantity <= 0) {
+                        this.removeFromCart(productId);
+                    } else {
+                        this.saveLocalData();
+                        this.renderCart();
+                        this.updateCartBadge();
+                    }
+                }
+            },
+
+            removeFromCart: function(productId) {
+                if (confirm('حذف این محصول از سبد؟')) {
+                    this.cart = this.cart.filter(item => item.id !== productId);
+                    this.saveLocalData();
+                    this.renderCart();
+                    this.updateCartBadge();
+                }
+            },
+
+            // --- آدرس‌ها ---
+            renderAddresses: function() {
+                const container = document.getElementById('address-list');
+                
+                if (this.addresses.length === 0) {
+                    container.innerHTML = '<p style="color:var(--text-sub); text-align:center;">هنوز آدرسی ثبت نشده است</p>';
+                    return;
+                }
+                
+                container.innerHTML = this.addresses.map(addr => `
+                    <div class="address-item">
+                        <h4>${addr.title}</h4>
+                        <p>${addr.full}</p>
+                        <div class="address-actions">
+                            <button class="edit-addr-btn" onclick="app.editAddress(${addr.id})">ویرایش</button>
+                            <button class="del-addr-btn" onclick="app.deleteAddress(${addr.id})">حذف</button>
+                        </div>
+                    </div>
+                `).join('');
+            },
+
+            openAddressModal: function(id = null) {
+                this.editingAddressId = id;
+                const modal = document.getElementById('address-modal');
+                
+                if (id) {
+                    const addr = this.addresses.find(a => a.id === id);
+                    document.getElementById('address-modal-title').innerText = 'ویرایش آدرس';
+                    document.getElementById('addr-title').value = addr.title;
+                    document.getElementById('addr-full').value = addr.full;
+                } else {
+                    document.getElementById('address-modal-title').innerText = 'افزودن آدرس';
+                    document.getElementById('addr-title').value = '';
+                    document.getElementById('addr-full').value = '';
+                }
+                
+                modal.classList.add('show');
+            },
+
+            closeAddressModal: function() {
+                document.getElementById('address-modal').classList.remove('show');
+            },
+
+            saveAddress: function() {
+                const title = document.getElementById('addr-title').value.trim();
+                const full = document.getElementById('addr-full').value.trim();
+                
+                if (!title || !full) {
+                    alert('لطفا تمام فیلدها را پر کنید');
+                    return;
+                }
+                
+                if (this.editingAddressId) {
+                    const addr = this.addresses.find(a => a.id === this.editingAddressId);
+                    addr.title = title;
+                    addr.full = full;
+                } else {
+                    const newId = this.addresses.length > 0 ? Math.max(...this.addresses.map(a => a.id)) + 1 : 1;
+                    this.addresses.push({ id: newId, title, full });
+                }
+                
+                this.saveLocalData();
+                this.renderAddresses();
+                this.closeAddressModal();
+                this.showNotification('آدرس ذخیره شد');
+            },
+
+            editAddress: function(id) {
+                this.openAddressModal(id);
+            },
+
+            deleteAddress: function(id) {
+                if (confirm('حذف این آدرس؟')) {
+                    this.addresses = this.addresses.filter(a => a.id !== id);
+                    this.saveLocalData();
+                    this.renderAddresses();
+                }
+            },
+
+            // --- تکمیل خرید ---
+            proceedCheckout: function() {
+                if (this.addresses.length === 0) {
+                    alert('لطفا ابتدا یک آدرس ثبت کنید');
+                    this.nav('profile');
+                    return;
+                }
+                this.showPage('checkout');
+            },
+
+            renderCheckout: function() {
+                const container = document.getElementById('checkout-address-list');
+                
+                container.innerHTML = this.addresses.map(addr => `
+                    <div class="address-item ${this.selectedAddressId === addr.id ? 'selected' : ''}" 
+                         onclick="app.selectAddress(${addr.id})">
+                        <h4>${addr.title}</h4>
+                        <p>${addr.full}</p>
+                    </div>
+                `).join('');
+            },
+
+            selectAddress: function(id) {
+                this.selectedAddressId = id;
+                this.renderCheckout();
+            },
+
+            previewReceipt: function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const preview = document.getElementById('receipt-preview');
+                        preview.src = e.target.result;
+                        preview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            },
+
+            submitOrder: async function() {
+                const fullname = document.getElementById('checkout-fullname').value.trim();
+                const postal = document.getElementById('checkout-postal').value.trim();
+                const receiptFile = document.getElementById('receipt-file').files[0];
+                
+                if (!this.selectedAddressId) {
+                    alert('لطفا آدرس را انتخاب کنید');
+                    return;
+                }
+                if (!fullname || !postal) {
+                    alert('لطفا نام و کد پستی را وارد کنید');
+                    return;
+                }
+                if (postal.length !== 10 || !/^\d+$/.test(postal)) {
+                    alert('کد پستی باید ۱۰ رقم باشد');
+                    return;
+                }
+                if (!receiptFile) {
+                    alert('لطفا فیش واریزی را آپلود کنید');
+                    return;
+                }
+                
+                const loader = document.getElementById('loader');
+                loader.style.display = 'flex';
+                loader.querySelector('p').innerText = 'در حال ارسال سفارش...';
+                
+                try {
+                    // آپلود فیش
+                    const storageRef = firebase.storage().ref();
+                    const receiptRef = storageRef.child(`receipts/${Date.now()}_${receiptFile.name}`);
+                    await receiptRef.put(receiptFile);
+                    const receiptUrl = await receiptRef.getDownloadURL();
+                    
+                    // آماده‌سازی پیام
+                    const selectedAddr = this.addresses.find(a => a.id === this.selectedAddressId);
+                    const total = this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                    
+                    let message = `🛍️ سفارش جدید\n\n`;
+                    message += `👤 نام: ${fullname}\n`;
+                    message += `📧 ایمیل: ${auth.currentUser.email}\n`;
+                    message += `📮 کد پستی: ${postal}\n\n`;
+                    message += `📍 آدرس: ${selectedAddr.title}\n${selectedAddr.full}\n\n`;
+                    message += `🛒 محصولات:\n`;
+                    this.cart.forEach(item => {
+                        message += `• ${item.name} × ${item.quantity} = ${this.formatPrice(item.price * item.quantity)} تومان\n`;
+                    });
+                    message += `\n💰 مجموع: ${this.formatPrice(total)} تومان\n\n`;
+                    message += `📷 فیش واریزی: ${receiptUrl}`;
+                    
+                    // ارسال به تلگرام
+                    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            chat_id: TELEGRAM_CHAT_ID,
+                            text: message
+                        })
+                    });
+                    
+                    // پاکسازی
+                    this.cart = [];
+                    this.saveLocalData();
+                    this.updateCartBadge();
+                    
+                    loader.style.display = 'none';
+                    alert('سفارش شما با موفقیت ثبت شد!\nبه زودی با شما تماس خواهیم گرفت.');
+                    this.showPage('home');
+                    
+                } catch (error) {
+                    loader.style.display = 'none';
+                    alert('خطا در ثبت سفارش: ' + error.message);
+                }
+            },
+
+            // --- کمکی ---
+            formatPrice: function(num) {
+                return new Intl.NumberFormat('fa-IR').format(num);
+            },
+
+            showNotification: function(text) {
+                const notif = document.createElement('div');
+                notif.style.cssText = `
+                    position: fixed; bottom: 20px; right: 20px;
+                    background: var(--gold-primary); color: #000;
+                    padding: 15px 25px; border-radius: 10px;
+                    z-index: 3000; animation: slideIn 0.3s;
+                `;
+                notif.innerText = text;
+                document.body.appendChild(notif);
+                
+                setTimeout(() => notif.remove(), 2000);
             }
         };
 
-        // شروع
         window.onload = () => auth.init();
-
     </script>
 </body>
 </html>
